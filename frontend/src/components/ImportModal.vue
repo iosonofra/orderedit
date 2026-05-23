@@ -13,11 +13,20 @@
           <button class="tab-btn" :class="{ active: format === 'json' }" @click="format = 'json'">JSON</button>
         </div>
 
+        <input
+          ref="fileInput"
+          type="file"
+          accept=".csv,.json"
+          style="display: none"
+          @change="onFileSelected"
+        />
+
         <div class="drop-zone"
           @dragover.prevent
           @drop.prevent="onDrop"
+          @click="fileInput?.click()"
         >
-          Trascina qui un file .csv/.json oppure incolla i dati sotto
+          Trascina qui un file .csv/.json o <strong>clicca per sfogliare</strong> (oppure incolla sotto)
         </div>
 
         <div class="format-hint">
@@ -88,6 +97,7 @@ const emit = defineEmits(['close', 'imported'])
 const templateStore = useTemplateStore()
 const notificationStore = useNotificationStore()
 
+const fileInput = ref(null)
 const format = ref('csv')
 const mode = ref('merge')
 const inputData = ref('')
@@ -156,9 +166,7 @@ function parsePreview() {
   previewErrors.value = out.errors
 }
 
-function onDrop(e) {
-  const file = e.dataTransfer?.files?.[0]
-  if (!file) return
+function loadFile(file) {
   const name = file.name.toLowerCase()
   if (name.endsWith('.json')) format.value = 'json'
   if (name.endsWith('.csv')) format.value = 'csv'
@@ -168,6 +176,18 @@ function onDrop(e) {
     parsePreview()
   }
   reader.readAsText(file)
+}
+
+function onDrop(e) {
+  const file = e.dataTransfer?.files?.[0]
+  if (!file) return
+  loadFile(file)
+}
+
+function onFileSelected(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  loadFile(file)
 }
 
 async function doImport() {
@@ -208,10 +228,17 @@ async function doImport() {
 .drop-zone {
   border: 1px dashed var(--border);
   border-radius: var(--radius-sm);
-  padding: 8px 10px;
+  padding: 14px 16px;
   color: var(--text-secondary);
   font-size: 12px;
   margin-bottom: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--transition), background-color var(--transition);
+}
+.drop-zone:hover {
+  border-color: var(--accent);
+  background-color: var(--bg-hover);
 }
 .format-hint {
   font-size: 12px;

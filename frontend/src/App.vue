@@ -2,26 +2,85 @@
   <div class="app-shell">
     <nav class="navbar">
       <div class="navbar-brand">
+        <svg class="brand-logo" viewBox="0 0 32 32" fill="none">
+          <defs>
+            <linearGradient id="brand-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#3768d6" />
+              <stop offset="50%" stop-color="#5c8df6" />
+              <stop offset="100%" stop-color="#8b5cf6" />
+            </linearGradient>
+            <linearGradient id="brand-sparkle" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#ffb703" />
+              <stop offset="100%" stop-color="#fb8500" />
+            </linearGradient>
+            <filter id="brand-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#5c8df6" flood-opacity="0.25" />
+            </filter>
+          </defs>
+          <rect x="4" y="6" width="24" height="20" rx="4.5" fill="url(#brand-grad)" filter="url(#brand-glow)" />
+          <rect x="7.5" y="9.5" width="17" height="13" rx="1.5" stroke="rgba(255, 255, 255, 0.85)" stroke-width="1.5" />
+          <line x1="13" y1="9.5" x2="13" y2="22.5" stroke="rgba(255, 255, 255, 0.85)" stroke-width="1.2" />
+          <line x1="7.5" y1="14" x2="24.5" y2="14" stroke="rgba(255, 255, 255, 0.85)" stroke-width="1.2" />
+          <line x1="7.5" y1="18" x2="24.5" y2="18" stroke="rgba(255, 255, 255, 0.85)" stroke-width="1.2" />
+          <g filter="url(#brand-glow)">
+            <path d="M25.5 3.5L28.5 6.5L18.5 16.5H15.5V13.5L25.5 3.5Z" fill="#ffffff" />
+            <path d="M28.5 1.5L29.3 3.1L30.9 3.9L29.3 4.7L28.5 6.3L27.7 4.7L26.1 3.9L27.7 3.1L28.5 1.5Z" fill="url(#brand-sparkle)" />
+          </g>
+        </svg>
         <span class="brand-name">OrderEdit</span>
       </div>
 
-      <div class="navbar-nav">
+      <div class="navbar-nav segmented-control">
         <RouterLink to="/editor" class="nav-link" active-class="nav-link--active">
-          Foglio
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="3" y1="15" x2="21" y2="15"></line>
+            <line x1="10" y1="9" x2="10" y2="21"></line>
+          </svg>
+          <span class="nav-text">Foglio</span>
         </RouterLink>
         <RouterLink to="/catalog" class="nav-link" active-class="nav-link--active">
-          Catalogo
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+            <line x1="7" y1="7" x2="7.01" y2="7"></line>
+          </svg>
+          <span class="nav-text">Catalogo</span>
         </RouterLink>
         <RouterLink to="/settings" class="nav-link" active-class="nav-link--active">
-          Impostazioni
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
+          <span class="nav-text">Impostazioni</span>
         </RouterLink>
       </div>
 
       <div class="navbar-meta">
         <span v-if="spreadsheetStore.filename" class="filename-badge" :class="{ 'has-unsaved': spreadsheetStore.isUnsaved }">
           <span class="filename-text">{{ spreadsheetStore.filename }}</span>
-          <span v-if="spreadsheetStore.isUnsaved" class="unsaved-pill">Non salvato</span>
+          <span v-if="spreadsheetStore.isUnsaved" class="pulse-dot" title="Modifiche non salvate"></span>
         </span>
+        <button class="theme-toggle-btn" @click="spreadsheetStore.showShortcutsOverlay = true" title="Scorciatoie da tastiera" style="margin-right: 2px;">
+          <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: currentColor;">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+          </svg>
+        </button>
+        <button class="theme-toggle-btn" @click="toggleTheme" title="Cambia tema">
+          <svg v-if="currentTheme === 'light'" viewBox="0 0 24 24">
+            <path d="M12.3 22h-.1c-5.5 0-10-4.5-10-10 0-4.8 3.5-8.9 8.2-9.8.6-.1 1.2.3 1.3.9.1.6-.2 1.2-.8 1.4-3.5 1.1-6 4.3-6 8 0 4.4 3.6 8 8 8 3.1 0 5.9-1.8 7.2-4.7.3-.5.9-.8 1.5-.6.6.2.9.8.7 1.4-.9 2.9-3.8 4.8-7.1 4.8z"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24">
+            <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L18.36 16.95zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zm-12.37 12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41z"/>
+          </svg>
+        </button>
       </div>
     </nav>
 
@@ -43,17 +102,168 @@
           </div>
         </TransitionGroup>
       </div>
+
+      <!-- Shortcuts Legend Modal Backdrop -->
+      <div v-if="spreadsheetStore.showShortcutsOverlay" class="modal-backdrop" @click="spreadsheetStore.showShortcutsOverlay = false">
+        <div class="modal-card shortcuts-legend-card animate-zoom-in" @click.stop>
+          <div class="modal-card-header">
+            <h3>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);">
+                <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M18 12h.01M7 16h10M10 12h4"></path>
+              </svg>
+              Scorciatoie da Tastiera
+            </h3>
+            <button class="close-btn" @click="spreadsheetStore.showShortcutsOverlay = false">&times;</button>
+          </div>
+          <div class="modal-card-body">
+            <div class="shortcuts-grid">
+              <div class="shortcut-group">
+                <div class="shortcut-group-title">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"></path>
+                  </svg>
+                  Navigazione e Modifica
+                </div>
+                <div class="shortcut-item">
+                  <span class="shortcut-desc">Modifica cella direttamente</span>
+                  <span class="shortcut-dots"></span>
+                  <span class="shortcut-keys"><kbd>Doppio Click</kbd><span class="shortcut-connector">o</span><kbd>Invio</kbd></span>
+                </div>
+                <div class="shortcut-item">
+                  <span class="shortcut-desc">Sposta alla cella successiva e salva</span>
+                  <span class="shortcut-dots"></span>
+                  <span class="shortcut-keys"><kbd>Tab</kbd><span class="shortcut-connector">/</span><kbd>Invio</kbd></span>
+                </div>
+                <div class="shortcut-item">
+                  <span class="shortcut-desc">Annulla modifica / Chiudi menu o filtri</span>
+                  <span class="shortcut-dots"></span>
+                  <span class="shortcut-keys"><kbd>Esc</kbd></span>
+                </div>
+              </div>
+              <div class="shortcut-group">
+                <div class="shortcut-group-title">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                  </svg>
+                  Azioni Rapide ed History
+                </div>
+                <div class="shortcut-item">
+                  <span class="shortcut-desc">Annulla ultima modifica</span>
+                  <span class="shortcut-dots"></span>
+                  <span class="shortcut-keys"><kbd>Ctrl</kbd><span class="shortcut-connector">+</span><kbd>Z</kbd></span>
+                </div>
+                <div class="shortcut-item">
+                  <span class="shortcut-desc">Ripristina modifica annullata</span>
+                  <span class="shortcut-dots"></span>
+                  <span class="shortcut-keys"><kbd>Ctrl</kbd><span class="shortcut-connector">+</span><kbd>Y</kbd></span>
+                </div>
+                <div class="shortcut-item">
+                  <span class="shortcut-desc">Focus barra ricerca avanzata</span>
+                  <span class="shortcut-dots"></span>
+                  <span class="shortcut-keys"><kbd>Ctrl</kbd><span class="shortcut-connector">+</span><kbd>F</kbd></span>
+                </div>
+              </div>
+              <div class="shortcut-group">
+                <div class="shortcut-group-title">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="7" ry="7"></rect>
+                    <path d="M12 2v10M5 10h14"></path>
+                  </svg>
+                  Mouse e Interazioni
+                </div>
+                <div class="shortcut-item">
+                  <span class="shortcut-desc">Apri menu contestuale cella</span>
+                  <span class="shortcut-dots"></span>
+                  <span class="shortcut-keys"><kbd>Tasto Destro</kbd></span>
+                </div>
+                <div class="shortcut-item">
+                  <span class="shortcut-desc">Drag-to-fill (Trascina per copiare/sequenza)</span>
+                  <span class="shortcut-dots"></span>
+                  <span class="shortcut-keys"><kbd>Quadratino Selezione</kbd></span>
+                </div>
+                <div class="shortcut-item">
+                  <span class="shortcut-desc">Mostra / nascondi questa guida</span>
+                  <span class="shortcut-dots"></span>
+                  <span class="shortcut-keys"><kbd>?</kbd></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Global Glassmorphic Drag Overlay -->
+      <div v-if="globalDragging" class="global-drag-overlay" @dragenter.prevent @dragover.prevent @drop.prevent>
+        <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px;">Trascina qui il tuo file</h2>
+        <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin: 0 0 16px 0;">Rilascia il file nella scheda corretta per caricare il catalogo o il foglio ordini</p>
+        <div class="drag-cards-container">
+          <div
+            class="drag-card drag-card-xlsx"
+            :class="{ active: draggedFileType === 'xlsx' }"
+            @dragenter.prevent="draggedFileType = 'xlsx'"
+            @dragover.prevent="draggedFileType = 'xlsx'"
+            @dragleave.prevent="draggedFileType = ''"
+            @drop.stop.prevent="onCardDrop('xlsx', $event)"
+          >
+            <div class="drag-icon-wrap">
+              <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; fill: currentColor;">
+                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+              </svg>
+            </div>
+            <h3>Carica Ordini (.xlsx)</h3>
+            <p>Trascina il foglio ordini qui per caricarlo nella griglia e iniziare l'editing.</p>
+          </div>
+          <div
+            class="drag-card drag-card-backup"
+            :class="{ active: draggedFileType === 'backup' }"
+            @dragenter.prevent="draggedFileType = 'backup'"
+            @dragover.prevent="draggedFileType = 'backup'"
+            @dragleave.prevent="draggedFileType = ''"
+            @drop.stop.prevent="onCardDrop('backup', $event)"
+          >
+            <div class="drag-icon-wrap">
+              <svg viewBox="0 0 24 24" style="width: 32px; height: 32px; fill: currentColor;">
+                <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/>
+              </svg>
+            </div>
+            <h3>Ripristina Catalogo (.csv, .json)</h3>
+            <p>Trascina il file di backup del catalogo per importarlo o ripristinarlo direttamente.</p>
+          </div>
+        </div>
+      </div>
     </Teleport>
   </div>
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+import api from './api/index.js'
 import { useNotificationStore } from './stores/notification.js'
 import { useSpreadsheetStore } from './stores/spreadsheet.js'
+import { useTemplateStore } from './stores/templates.js'
 
 const notificationStore = useNotificationStore()
 const spreadsheetStore = useSpreadsheetStore()
+const templateStore = useTemplateStore()
+const router = useRouter()
+
+const currentTheme = ref('light')
+
+// Global Drag & Drop Refs
+const globalDragging = ref(false)
+const draggedFileType = ref('')
+const dragCounter = ref(0)
+
+function toggleTheme() {
+  const newTheme = currentTheme.value === 'dark' ? 'light' : 'dark'
+  currentTheme.value = newTheme
+  document.documentElement.setAttribute('data-theme', newTheme)
+  try {
+    localStorage.setItem('orderedit:theme', newTheme)
+  } catch {}
+}
 
 function toastIcon(type) {
   return { success: 'OK', error: 'ERR', warning: 'ATT', info: 'INFO' }[type] ?? 'INFO'
@@ -66,12 +276,356 @@ function handleBeforeUnload(e) {
   }
 }
 
+function handleGlobalKeyDown(e) {
+  const activeEl = document.activeElement
+  const isEditable = activeEl && (
+    activeEl.tagName === 'INPUT' ||
+    activeEl.tagName === 'TEXTAREA' ||
+    activeEl.isContentEditable
+  )
+
+  // Escape key hides global dragging overlay
+  if (e.key === 'Escape' && globalDragging.value) {
+    e.preventDefault()
+    globalDragging.value = false
+    dragCounter.value = 0
+    draggedFileType.value = ''
+    return
+  }
+
+  // Toggle keyboard shortcuts legend overlay on '?' (Shift + /)
+  if (e.key === '?' && !isEditable) {
+    e.preventDefault()
+    spreadsheetStore.showShortcutsOverlay = !spreadsheetStore.showShortcutsOverlay
+    return
+  }
+
+  // Ctrl+Z (or Cmd+Z) for Undo
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+    if (isEditable) return
+    e.preventDefault()
+    const success = spreadsheetStore.undo()
+    if (success) {
+      notificationStore.info('Modifica annullata (Ctrl+Z)')
+      window.dispatchEvent(new CustomEvent('spreadsheet-history-changed'))
+    }
+    return
+  }
+
+  // Ctrl+Y (or Ctrl+Shift+Z) for Redo
+  const isRedoKey = e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey)
+  if ((e.ctrlKey || e.metaKey) && isRedoKey) {
+    if (isEditable) return
+    e.preventDefault()
+    const success = spreadsheetStore.redo()
+    if (success) {
+      notificationStore.info('Modifica ripristinata (Ctrl+Y)')
+      window.dispatchEvent(new CustomEvent('spreadsheet-history-changed'))
+    }
+    return
+  }
+}
+
+// Window drag and drop handlers
+function handleWindowDragEnter(e) {
+  if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
+    dragCounter.value++
+    if (dragCounter.value === 1) {
+      globalDragging.value = true
+    }
+  }
+}
+
+function handleWindowDragOver(e) {
+  if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
+    e.preventDefault()
+  }
+}
+
+// Ensure the helper only hides if actually leaving
+function handleWindowDragLeave(e) {
+  if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
+    dragCounter.value--
+    if (dragCounter.value <= 0) {
+      globalDragging.value = false
+      dragCounter.value = 0
+      draggedFileType.value = ''
+    }
+  }
+}
+
+function handleWindowDrop(e) {
+  e.preventDefault()
+  globalDragging.value = false
+  dragCounter.value = 0
+  draggedFileType.value = ''
+}
+
+function onCardDrop(targetType, event) {
+  globalDragging.value = false
+  dragCounter.value = 0
+  draggedFileType.value = ''
+  
+  const file = event.dataTransfer?.files?.[0]
+  if (!file) return
+
+  if (targetType === 'xlsx') {
+    if (!file.name.match(/\.xlsx$/i)) {
+      notificationStore.show({ type: 'error', message: 'Solo file .xlsx sono supportati per il caricamento foglio' })
+      return
+    }
+    handleXlsxUpload(file)
+  } else if (targetType === 'backup') {
+    if (!file.name.match(/\.(csv|json)$/i)) {
+      notificationStore.show({ type: 'error', message: 'Solo file .csv e .json sono supportati per il ripristino catalogo' })
+      return
+    }
+    handleBackupRestore(file)
+  }
+}
+
+async function handleXlsxUpload(file) {
+  spreadsheetStore.isProcessing = true
+  try {
+    const form = new FormData()
+    form.append('file', file)
+
+    const backendMeta = await api.post('/xlsx/upload', form).then((res) => res?.data || null)
+    const backendSheets = Array.isArray(backendMeta?.sheets) ? backendMeta.sheets : null
+    const finalSheets = Array.isArray(backendSheets) && backendSheets.length > 0 ? backendSheets : null
+
+    if (!finalSheets) {
+      notificationStore.show({ type: 'error', message: 'Impossibile leggere il file. Controlla backend e formato XLSX.' })
+      return
+    }
+    applyEanOverrides(finalSheets, backendMeta?.eanOverrides || [])
+    sanitizeSheets(finalSheets)
+
+    spreadsheetStore.loadSheets(finalSheets, file.name)
+    spreadsheetStore.pushCheckpoint(finalSheets, { markUnsaved: false })
+
+    notificationStore.show({ type: 'success', message: `File Excel caricato con successo: ${file.name}` })
+    router.push('/editor')
+  } catch (err) {
+    notificationStore.show({ type: 'error', message: 'Errore durante l\'importazione del file Excel.' })
+    console.error(err)
+  } finally {
+    spreadsheetStore.isProcessing = false
+  }
+}
+
+function handleBackupRestore(file) {
+  const name = file.name.toLowerCase()
+  let format = 'csv'
+  if (name.endsWith('.json')) format = 'json'
+  else if (name.endsWith('.csv')) format = 'csv'
+
+  const reader = new FileReader()
+  reader.onload = async () => {
+    const fileContent = String(reader.result || '')
+    
+    // Quick validation
+    let isValid = false
+    if (format === 'json') {
+      try {
+        const parsed = JSON.parse(fileContent)
+        isValid = Array.isArray(parsed) && parsed.every(item => item && (item.id || item.name))
+      } catch {
+        isValid = false
+      }
+    } else {
+      const lines = fileContent.split(/\r?\n/).filter(line => line.trim())
+      isValid = lines.length > 0 && lines.every(line => line.split(',').length >= 2)
+    }
+
+    if (!isValid) {
+      notificationStore.show({ type: 'error', message: 'Contenuto del file di backup non valido o malformato.' })
+      return
+    }
+
+    spreadsheetStore.isProcessing = true
+    try {
+      const result = await templateStore.importBulk({
+        format,
+        data: fileContent,
+        mode: 'merge'
+      })
+      notificationStore.show({
+        type: 'success',
+        message: `Backup ripristinato: importati ${result.imported} template (${result.skipped} già presenti).`
+      })
+      await templateStore.fetchAll()
+      router.push('/catalog')
+    } catch (err) {
+      notificationStore.show({ type: 'error', message: 'Errore durante il ripristino del backup.' })
+      console.error(err)
+    } finally {
+      spreadsheetStore.isProcessing = false
+    }
+  }
+  reader.readAsText(file)
+}
+
+// Sanitizing helper functions (duplicated from AppToolbar for standalone execution)
+function stripTechnicalTextPrefix(value) {
+  if (typeof value !== 'string') return value
+  const cleaned = value
+    .replace(/^'+/, '')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+  try {
+    return cleaned.normalize('NFC')
+  } catch {
+    return cleaned
+  }
+}
+
+function scientificToPlainString(value) {
+  const src = String(value).trim()
+  const m = src.match(/^([+-]?)(\d+)(?:\.(\d+))?[eE]([+-]?\d+)$/)
+  if (!m) return src
+  const sign = m[1] || ''
+  const intPart = m[2] || '0'
+  const fracPart = m[3] || ''
+  const exp = Number.parseInt(m[4], 10)
+  if (!Number.isFinite(exp)) return src
+
+  let digits = intPart + fracPart
+  let decPos = intPart.length + exp
+
+  if (decPos <= 0) {
+    digits = `${'0'.repeat(Math.abs(decPos))}${digits}`
+    decPos = 0
+  } else if (decPos >= digits.length) {
+    digits = `${digits}${'0'.repeat(decPos - digits.length)}`
+  }
+
+  const whole = digits.slice(0, decPos) || '0'
+  const frac = digits.slice(decPos).replace(/0+$/, '')
+  return `${sign}${whole}${frac ? `.${frac}` : ''}`
+}
+
+function normalizeEanValue(value) {
+  if (value === undefined || value === null) return ''
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(Math.trunc(value))
+  }
+  const text = stripTechnicalTextPrefix(String(value))
+  const plain = /[eE]/.test(text) ? scientificToPlainString(text) : text
+  return plain.replace(/\.0+$/, '')
+}
+
+function normalizeHeaderLabel(value) {
+  return stripTechnicalTextPrefix(String(value ?? ''))
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[^a-z0-9]/g, '')
+}
+
+function detectEanColumnsFromSheetData(sheetData) {
+  const hits = []
+  if (!Array.isArray(sheetData) || sheetData.length === 0) return hits
+  const scanRows = Math.min(6, sheetData.length)
+  for (let r = 0; r < scanRows; r++) {
+    const row = sheetData[r]
+    if (!Array.isArray(row)) continue
+    for (let c = 0; c < row.length; c++) {
+      const raw = row[c]
+      const label = typeof raw === 'object' ? (raw?.v ?? raw?.m ?? '') : raw
+      const normalized = normalizeHeaderLabel(label)
+      if (normalized === 'ean' || normalized.includes('ean')) {
+        if (!hits.some((h) => h.col === c)) hits.push({ col: c, headerRow: r })
+      }
+    }
+  }
+  return hits
+}
+
+function setCellAsText(cell, textValue) {
+  const normalized = normalizeEanValue(textValue)
+  if (cell && typeof cell === 'object') {
+    const nextCell = { ...cell, v: normalized, m: normalized, w: normalized, ct: { fa: '@', t: 's' } }
+    if ('f' in nextCell) delete nextCell.f
+    if ('qp' in nextCell) delete nextCell.qp
+    if ('quotePrefix' in nextCell) delete nextCell.quotePrefix
+    return nextCell
+  }
+  return { v: normalized, m: normalized, w: normalized, ct: { fa: '@', t: 's' } }
+}
+
+function applyEanOverrides(rawSheets, eanOverrides) {
+  if (!Array.isArray(rawSheets) || !Array.isArray(eanOverrides) || eanOverrides.length === 0) return
+  eanOverrides.forEach((ov) => {
+    let sheet = rawSheets.find((s) => s?.name === ov.name)
+    if (!sheet && Number.isInteger(ov.index)) sheet = rawSheets[ov.index]
+    if (!sheet || !Array.isArray(sheet.data) || !Number.isInteger(ov.col)) return
+    if (!Array.isArray(ov.values)) return
+
+    ov.values.forEach((item) => {
+      if (!Number.isInteger(item?.r) || item.r < 1) return
+      if (!sheet.data[item.r]) sheet.data[item.r] = []
+      const current = sheet.data[item.r][ov.col]
+      sheet.data[item.r][ov.col] = setCellAsText(current, item.value ?? '')
+    })
+  })
+}
+
+function sanitizeSheets(rawSheets) {
+  const sanitizeCell = (cell) => {
+    if (typeof cell === 'string') return stripTechnicalTextPrefix(cell)
+    if (!cell || typeof cell !== 'object') return cell
+
+    const nextCell = { ...cell }
+    if (typeof nextCell.v === 'string') nextCell.v = stripTechnicalTextPrefix(nextCell.v)
+    if (typeof nextCell.m === 'string') nextCell.m = stripTechnicalTextPrefix(nextCell.m)
+    if (typeof nextCell.w === 'string') nextCell.w = stripTechnicalTextPrefix(nextCell.w)
+
+    if ('qp' in nextCell) delete nextCell.qp
+    if ('quotePrefix' in nextCell) delete nextCell.quotePrefix
+
+    if (nextCell.ct && nextCell.ct.t === 'inlineStr' && Array.isArray(nextCell.ct.s)) {
+      nextCell.ct = {
+        ...nextCell.ct,
+        s: nextCell.ct.s.map((run) => {
+          if (!run || typeof run !== 'object') return run
+          return {
+            ...run,
+            v: stripTechnicalTextPrefix(String(run.v ?? '')),
+          }
+        }),
+      }
+    }
+
+    if (nextCell.v !== undefined && nextCell.m === undefined) nextCell.m = String(nextCell.v)
+    return nextCell
+  }
+
+  rawSheets.forEach((sheet) => {
+    if (Array.isArray(sheet.data)) {
+      const eanHits = detectEanColumnsFromSheetData(sheet.data)
+
+      for (let r = 0; r < sheet.data.length; r++) {
+        const row = sheet.data[r]
+        if (!row) continue
+        for (let c = 0; c < row.length; c++) {
+          row[c] = sanitizeCell(row[c])
+          const eanHit = eanHits.find((h) => h.col === c)
+          if (eanHit && r > eanHit.headerRow) {
+            row[c] = setCellAsText(row[c], typeof row[c] === 'object' ? (row[c]?.v ?? row[c]?.m ?? row[c]?.w) : row[c])
+          }
+        }
+      }
+      if (sheet.data.length > 0 && sheet.celldata) delete sheet.celldata
+    }
+  })
+}
+
 onMounted(() => {
   let savedTheme = null
   try {
     savedTheme = localStorage.getItem('orderedit:theme')
   } catch {}
   const initialTheme = savedTheme === 'dark' ? 'dark' : 'light'
+  currentTheme.value = initialTheme
   document.documentElement.setAttribute('data-theme', initialTheme)
   try {
     if (!savedTheme) localStorage.setItem('orderedit:theme', 'light')
@@ -80,10 +634,24 @@ onMounted(() => {
   spreadsheetStore.loadEditorPrefs()
   notificationStore.loadPrefs()
   window.addEventListener('beforeunload', handleBeforeUnload)
+  window.addEventListener('keydown', handleGlobalKeyDown)
+  
+  // Register global drag & drop overlay listeners
+  window.addEventListener('dragenter', handleWindowDragEnter)
+  window.addEventListener('dragover', handleWindowDragOver)
+  window.addEventListener('dragleave', handleWindowDragLeave)
+  window.addEventListener('drop', handleWindowDrop)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
+  window.removeEventListener('keydown', handleGlobalKeyDown)
+  
+  // Unregister global drag & drop overlay listeners
+  window.removeEventListener('dragenter', handleWindowDragEnter)
+  window.removeEventListener('dragover', handleWindowDragOver)
+  window.removeEventListener('dragleave', handleWindowDragLeave)
+  window.removeEventListener('drop', handleWindowDrop)
 })
 </script>
 
@@ -110,6 +678,19 @@ onBeforeUnmount(() => {
 .navbar-brand {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.brand-logo {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.navbar-brand:hover .brand-logo {
+  transform: rotate(8deg) scale(1.1);
 }
 
 .brand-name {
@@ -117,33 +698,93 @@ onBeforeUnmount(() => {
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.2px;
+  transition: color var(--transition);
 }
 
-.navbar-nav {
+.navbar-brand:hover .brand-name {
+  color: var(--accent);
+}
+
+.segmented-control {
+  background: rgba(21, 25, 38, 0.4);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
   display: flex;
-  gap: 4px;
+  gap: 2px;
+  align-items: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: border-color var(--transition), background var(--transition);
+}
+
+:root[data-theme='light'] .segmented-control {
+  background: rgba(237, 242, 255, 0.55);
+  border-color: rgba(55, 104, 214, 0.15);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  padding: 5px 10px;
-  border-radius: var(--radius-sm);
+  gap: 6.5px;
+  padding: 5px 12px;
+  border-radius: 999px;
   font-size: 12px;
   font-weight: 500;
   color: var(--text-muted);
   text-decoration: none;
-  transition: color var(--transition), background var(--transition);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  border: 1px solid transparent;
+}
+
+.nav-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 2px;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), stroke 0.2s ease;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .nav-link:hover {
   color: var(--text-primary);
-  background: var(--bg-hover);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+:root[data-theme='light'] .nav-link:hover {
+  background: rgba(55, 104, 214, 0.05);
+}
+
+.nav-link:hover .nav-icon {
+  transform: scale(1.18) rotate(-4deg);
+}
+
+.nav-link:active {
+  transform: scale(0.96);
 }
 
 .nav-link--active {
-  color: var(--accent);
-  background: var(--accent-light);
+  color: #ffffff !important;
+  background: var(--accent) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  font-weight: 600;
+  box-shadow: var(--shadow-accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+:root[data-theme='light'] .nav-link--active {
+  color: #ffffff !important;
+  background: var(--accent) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: var(--shadow-accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.nav-link--active .nav-icon {
+  stroke: #ffffff;
+  transform: scale(1.08) !important;
 }
 
 .navbar-meta {

@@ -511,6 +511,17 @@ function applyWorksheetStructureChanges(workbook, changes) {
       return;
     }
 
+    if (change.type === 'insertRows') {
+      if (change.index < 1) return; // keep header row
+      worksheet.spliceRows(change.index + 1, 0, ...Array(change.count).fill([]));
+      return;
+    }
+
+    if (change.type === 'insertColumns') {
+      worksheet.spliceColumns(change.index + 1, 0, ...Array(change.count).fill([]));
+      return;
+    }
+
     if (change.type === 'deleteColumns') {
       const protectedCols = getProtectedWorksheetColumns(worksheet);
       for (let col = change.index + 1; col <= change.index + change.count; col++) {

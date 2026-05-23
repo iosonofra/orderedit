@@ -63,5 +63,20 @@ export const useNotificationStore = defineStore('notification', {
       const idx = this.toasts.findIndex((t) => t.id === id)
       if (idx !== -1) this.toasts.splice(idx, 1)
     },
+    importPrefsData(data) {
+      if (!data || typeof data !== 'object') return false
+      const duration = Number.parseInt(data.duration, 10)
+      if (Number.isFinite(duration)) this.duration = Math.max(0, Math.min(30000, duration))
+      if (['bottom-right', 'bottom-center'].includes(data.position)) this.position = data.position
+      if (['all', 'warning', 'error'].includes(data.level)) this.level = data.level
+      this.savePrefs()
+      return true
+    },
+    resetToDefaults() {
+      this.duration = 5000
+      this.position = 'bottom-right'
+      this.level = 'all'
+      this.savePrefs()
+    },
   },
 })

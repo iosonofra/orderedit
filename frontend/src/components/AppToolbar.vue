@@ -9,24 +9,43 @@
     />
 
     <div class="toolbar-left">
-      <button id="btn-upload" class="btn btn-secondary" @click="fileInputRef.click()" title="Ctrl+O">
-        Carica Excel
+      <!-- Gruppo 1: File & Storia -->
+      <button id="btn-upload" class="btn btn-secondary btn-icon-inline" @click="fileInputRef.click()" title="Ctrl+O">
+        <svg viewBox="0 0 24 24">
+          <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10H6v-2h8v2zm4-4H6v-2h12v2z"/>
+        </svg>
+        <span>Carica Excel</span>
       </button>
 
-      <button class="btn btn-secondary" :disabled="!spreadsheetStore.hasData" @click="undoAction" title="Ctrl+Z">
-        Annulla
+      <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData || spreadsheetStore.checkpointIndex <= 0" @click="undoAction" title="Annulla ultima modifica (Ctrl+Z)">
+        <svg viewBox="0 0 24 24">
+          <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
+        </svg>
+        <span>Annulla</span>
       </button>
-      <button class="btn btn-secondary" :disabled="!spreadsheetStore.hasData" @click="redoAction" title="Ctrl+Y">
-        Ripeti
+      <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData || spreadsheetStore.checkpointIndex >= spreadsheetStore.checkpoints.length - 1" @click="redoAction" title="Ripristina modifica annullata (Ctrl+Y)">
+        <svg viewBox="0 0 24 24">
+          <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/>
+        </svg>
+        <span>Ripeti</span>
       </button>
 
-      <button class="btn btn-secondary" :disabled="!spreadsheetStore.hasData" @click="showSearchModal = true" title="Ctrl+F">
-        Trova e sostituisci
+      <div class="toolbar-divider"></div>
+
+      <!-- Gruppo 2: Strumenti Testo -->
+      <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData" @click="showSearchModal = true" title="Ctrl+F">
+        <svg viewBox="0 0 24 24">
+          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm2.5-7H8v1.5h4V7zm0 3.5H8V12h4v-1.5z"/>
+        </svg>
+        <span>Trova e sostituisci</span>
       </button>
 
       <div class="bulk-wrap">
-        <button class="btn btn-secondary" :disabled="!spreadsheetStore.hasData" @click="toggleBulkMenu">
-          Strumenti rapidi
+        <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData" @click="toggleBulkMenu">
+          <svg viewBox="0 0 24 24">
+            <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.3C.5 6.7.9 9.8 2.9 11.8c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.6z"/>
+          </svg>
+          <span>Strumenti rapidi</span>
         </button>
         <div v-if="showBulkMenu" class="bulk-menu">
           <button
@@ -45,8 +64,11 @@
       </div>
 
       <div class="bulk-wrap">
-        <button class="btn btn-secondary" :disabled="!spreadsheetStore.hasData" @click="toggleCourierMenu">
-          Imposta corriere
+        <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData" @click="toggleCourierMenu">
+          <svg viewBox="0 0 24 24">
+            <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm11.5 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM15 12H4V6h11v6z"/>
+          </svg>
+          <span>Imposta corriere</span>
         </button>
         <div v-if="showCourierMenu" class="bulk-menu">
           <button
@@ -69,37 +91,56 @@
         </div>
       </div>
 
+      <div class="toolbar-divider"></div>
+
+      <!-- Gruppo 3: Catalogo & Azioni -->
       <button
         id="btn-save-template"
-        class="btn btn-secondary"
+        class="btn btn-secondary btn-icon-inline"
         :disabled="!spreadsheetStore.hasData || renaming"
         @click="saveCurrentCellAsTemplate"
         title="Salva o aggiorna il template usando i dati di questa riga"
       >
-        Salva nel catalogo
+        <svg viewBox="0 0 24 24">
+          <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13zm-2-9H9v2h6V9zm0 3H9v2h6v-2z"/>
+        </svg>
+        <span>Salva nel catalogo</span>
       </button>
 
       <button
         id="btn-autorename"
-        class="btn btn-primary"
+        class="btn btn-primary btn-icon-inline"
         :disabled="!spreadsheetStore.hasData || renaming"
         @click="doAutoRename"
         title="Ctrl+Shift+R"
       >
         <span v-if="renaming" class="spinner"></span>
-        <span v-else>Aggiorna nomi</span>
+        <template v-else>
+          <svg viewBox="0 0 24 24">
+            <path d="M7.5 5.6L10 7 8.6 4.5 10 2 7.5 3.4 5 2l1.4 2.5L5 7zm12 9.8l-2.5-1.4 1.4 2.5-1.4 2.5 2.5-1.4 2.5 1.4-1.4-2.5zM19.3 2.2l-2.5 1.4 1.4 2.5-1.4 2.5 2.5-1.4 2.5 1.4-1.4-2.5zm-3.6 7.6L3.2 22.3c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L17.1 11.2l-1.4-1.4z"/>
+          </svg>
+          <span>Aggiorna nomi</span>
+        </template>
       </button>
 
+      <div class="toolbar-divider"></div>
+
+      <!-- Gruppo 4: Esportazione -->
       <button
         id="btn-export"
-        class="btn btn-success"
+        class="btn btn-success btn-icon-inline"
         :disabled="!spreadsheetStore.hasData || exporting"
         @click="openExportDiffModal"
         title="Ctrl+S"
         style="position: relative;"
       >
         <span v-if="exporting" class="spinner"></span>
-        <span v-else>Scarica Excel</span>
+        <template v-else>
+          <svg viewBox="0 0 24 24">
+            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+          </svg>
+          <span>Scarica Excel</span>
+        </template>
         <span v-if="spreadsheetStore.isUnsaved" class="unsaved-dot"></span>
       </button>
     </div>
@@ -121,8 +162,16 @@
           </div>
           <div class="modal-body missing-body">
             <p>I seguenti prodotti non sono stati trovati nel template. Puoi aggiungere il mapping direttamente qui:</p>
+            <div class="missing-search-wrapper" style="margin-bottom: 12px;">
+              <input
+                v-model="missingFilter"
+                class="input missing-search-input"
+                placeholder="Filtra prodotti non mappati per ID o nome..."
+                style="width: 100%; font-size: 13px;"
+              />
+            </div>
             <ul class="missing-list">
-              <li v-for="(item, i) in missingReport" :key="i" class="missing-item">
+              <li v-for="(item, i) in filteredMissingReport" :key="i" class="missing-item">
                 <div class="missing-info">
                   <strong>Riga {{ item.row }}:</strong> ID <code>{{ item.id }}</code>
                   <span v-if="item.currentName" class="current-name">- "{{ item.currentName }}"</span>
@@ -138,7 +187,7 @@
                     :title="`ID ${suggestion.id}`"
                   >
                     <span v-html="suggestion.name"></span>
-                    <small>{{ suggestion.scoreLabel }}</small>
+                    <small class="affinity-badge" :class="getAffinityClass(suggestion.score)">{{ suggestion.scoreLabel }}</small>
                   </button>
                 </div>
                 <template v-if="!item.saved">
@@ -206,9 +255,23 @@
               <button class="btn btn-secondary" @click="previewSearch">Anteprima</button>
               <button class="btn btn-primary" :disabled="searchMatches.length === 0" @click="replaceAllMatches">Sostituisci tutto</button>
             </div>
-            <div class="preview-head">{{ searchMatches.length }} match trovati</div>
+            <div class="search-nav-wrapper" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <span class="preview-head" style="margin: 0;">{{ searchMatches.length }} match trovati</span>
+              <span v-if="searchMatches.length > 0" class="search-count-badge">
+                {{ currentSearchIndex >= 0 ? currentSearchIndex + 1 : 0 }} di {{ searchMatches.length }}
+              </span>
+              <button class="search-nav-btn" :disabled="searchMatches.length === 0" @click="navigateSearch(-1)" title="Precedente">&lt;</button>
+              <button class="search-nav-btn" :disabled="searchMatches.length === 0" @click="navigateSearch(1)" title="Successivo">&gt;</button>
+            </div>
             <div class="preview-list">
-              <div v-for="(m, idx) in searchMatches.slice(0, 120)" :key="idx" class="preview-row">
+              <div
+                v-for="(m, idx) in searchMatches.slice(0, 120)"
+                :key="idx"
+                class="preview-row"
+                :class="{ active: idx === currentSearchIndex }"
+                @click="jumpToSearchMatch(idx)"
+                style="cursor: pointer;"
+              >
                 <span>S{{ m.sheet + 1 }} R{{ m.row + 1 }} C{{ m.col + 1 }}</span>
                 <code>{{ m.before }}</code>
                 <span>-></span>
@@ -274,7 +337,7 @@
 </template>
 
 <script setup>
-import { nextTick, ref, onMounted, onBeforeUnmount } from 'vue'
+import { nextTick, ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/index.js'
 import { useSpreadsheetStore } from '../stores/spreadsheet.js'
@@ -298,13 +361,98 @@ const showCourierMenu = ref(false)
 const showMissingModal = ref(false)
 const missingReport = ref([])
 const missingNameInputs = ref({})
+const missingFilter = ref('')
+
+const filteredMissingReport = computed(() => {
+  const query = missingFilter.value.trim().toLowerCase()
+  if (!query) return missingReport.value
+  return missingReport.value.filter(item => {
+    const id = String(item.id || '').toLowerCase()
+    const name = String(item.currentName || '').toLowerCase()
+    return id.includes(query) || name.includes(query)
+  })
+})
+
 const showSearchModal = ref(false)
-const searchQuery = ref('')
+
+const searchQuery = computed({
+  get() { return spreadsheetStore.searchQuery },
+  set(val) {
+    spreadsheetStore.searchQuery = val
+    previewSearch()
+  }
+})
 const replaceQuery = ref('')
-const columnFilter = ref('')
-const searchRegex = ref(false)
-const searchCase = ref(false)
+const columnFilter = computed({
+  get() { return spreadsheetStore.columnFilter },
+  set(val) {
+    spreadsheetStore.columnFilter = val
+    previewSearch()
+  }
+})
+const searchRegex = computed({
+  get() { return spreadsheetStore.searchRegex },
+  set(val) {
+    spreadsheetStore.searchRegex = val
+    previewSearch()
+  }
+})
+const searchCase = computed({
+  get() { return spreadsheetStore.searchCase },
+  set(val) {
+    spreadsheetStore.searchCase = val
+    previewSearch()
+  }
+})
+
 const searchMatches = ref([])
+const currentSearchIndex = ref(-1)
+
+watch(showSearchModal, (val) => {
+  if (val) {
+    currentSearchIndex.value = -1
+  }
+})
+
+function jumpToSearchMatch(idx) {
+  currentSearchIndex.value = idx
+  const match = searchMatches.value[idx]
+  if (!match) return
+  
+  // Switch active sheet if necessary
+  spreadsheetStore.setActiveSheetIndex(match.sheet)
+  // Highlight active selection
+  spreadsheetStore.setSelectedRange({
+    rowStart: match.row,
+    rowEnd: match.row,
+    colStart: match.col,
+    colEnd: match.col
+  })
+
+  // Scroll, focus, and flash cell
+  nextTick(() => {
+    const el = document.querySelector(`[data-cell="${match.row}_${match.col}"]`)
+    if (el) {
+      el.scrollIntoView({ block: 'center', inline: 'center' })
+      el.focus()
+      window.dispatchEvent(new CustomEvent('cells-replaced', {
+        detail: {
+          sheetIndex: match.sheet,
+          cells: [{ row: match.row, col: match.col }]
+        }
+      }))
+    }
+  })
+}
+
+function navigateSearch(direction) {
+  if (searchMatches.value.length === 0) return
+  let nextIdx = currentSearchIndex.value + direction
+  if (nextIdx < 0) nextIdx = searchMatches.value.length - 1
+  if (nextIdx >= searchMatches.value.length) nextIdx = 0
+  
+  jumpToSearchMatch(nextIdx)
+}
 const showDiffModal = ref(false)
 const compareOnlyMode = ref(false)
 const diffSummary = ref({ total: 0, items: [] })
@@ -919,6 +1067,7 @@ async function handleFileChange(e) {
     return
   }
 
+  spreadsheetStore.isProcessing = true
   operationText.value = 'Upload in corso...'
   try {
     const form = new FormData()
@@ -948,6 +1097,7 @@ async function handleFileChange(e) {
       notificationStore.show({ type: 'success', message: `File caricato: ${file.name}` })
     }
   } finally {
+    spreadsheetStore.isProcessing = false
     operationText.value = ''
     e.target.value = ''
   }
@@ -959,8 +1109,8 @@ function detectHeaderColumns(data) {
   let idCol = -1
   headerRow.forEach((cell, c) => {
     const val = getCellText(cell).trim()
-    if (val === 'Nome del prodotto') nomeCol = c
-    if (val === 'ID prodotto') idCol = c
+    if (val === spreadsheetStore.nameHeaderName) nomeCol = c
+    if (val === spreadsheetStore.idHeaderName) idCol = c
   })
   return { nomeCol, idCol }
 }
@@ -973,7 +1123,7 @@ function detectCourierColumn(data) {
     if (!Array.isArray(row)) continue
     for (let c = 0; c < row.length; c++) {
       const label = getCellText(row[c]).trim().toLowerCase().replace(/\s+/g, ' ')
-      if (label === 'nome corriere' || label === 'corriere') {
+      if (label === spreadsheetStore.courierHeaderName.toLowerCase() || label === 'corriere') {
         return { col: c, headerRow: r }
       }
     }
@@ -1027,6 +1177,13 @@ function idSimilarity(a, b) {
   }
 
   return prefixScore
+}
+
+function getAffinityClass(score) {
+  const pct = score * 100
+  if (pct >= 80) return 'affinity-high'
+  if (pct >= 50) return 'affinity-medium'
+  return 'affinity-low'
 }
 
 function buildTemplateSuggestions(idValue, currentName, templates) {
@@ -1110,7 +1267,7 @@ function getProtectedColumns(headerRow) {
   const row = headerRow || []
   for (let c = 0; c < row.length; c++) {
     const label = getCellText(row[c]).trim().toLowerCase()
-    if (label === 'ean') protectedCols.add(c)
+    if (label === spreadsheetStore.eanHeaderName.toLowerCase()) protectedCols.add(c)
   }
   return protectedCols
 }
@@ -1473,27 +1630,17 @@ function deleteSelectedRows() {
     return
   }
 
-  const allSheets = getCurrentSheets()
-  const activeIdx = getActiveSheetIndex(allSheets)
-  const sheet = allSheets[activeIdx]
+  const activeIdx = getActiveSheetIndex(spreadsheetStore.sheets)
+  const sheet = spreadsheetStore.sheets[activeIdx]
   if (!sheet || !Array.isArray(sheet.data)) return
   const start = range.rowStart
   const count = Math.min(range.rowEnd, sheet.data.length - 1) - start + 1
   if (count <= 0) return
   if (!window.confirm(`Eliminare ${count} riga/e da ${start + 1}?`)) return
 
-  applyDeleteRowsToSheet(sheet, start, count)
-  allSheets[activeIdx] = sheet
-  spreadsheetStore.recordStructureChange({
-    sheetIndex: activeIdx,
-    name: sheet.name,
-    type: 'deleteRows',
-    index: start,
-    count,
-  })
+  spreadsheetStore.deleteRowsAction(activeIdx, start, count)
   spreadsheetStore.setSelectedRange(null)
-  reloadGrid(allSheets)
-  spreadsheetStore.pushCheckpoint(allSheets)
+  reloadGrid(spreadsheetStore.sheets)
   notificationStore.show({ type: 'success', message: `${count} riga/e eliminate.` })
 }
 
@@ -1506,9 +1653,8 @@ function deleteSelectedColumns() {
     return
   }
 
-  const allSheets = getCurrentSheets()
-  const activeIdx = getActiveSheetIndex(allSheets)
-  const sheet = allSheets[activeIdx]
+  const activeIdx = getActiveSheetIndex(spreadsheetStore.sheets)
+  const sheet = spreadsheetStore.sheets[activeIdx]
   if (!sheet || !Array.isArray(sheet.data)) return
   const start = range.colStart
   const count = range.colEnd - range.colStart + 1
@@ -1523,18 +1669,9 @@ function deleteSelectedColumns() {
   }
   if (!window.confirm(`Eliminare ${count} colonna/e da ${columnName(start)}?`)) return
 
-  applyDeleteColumnsToSheet(sheet, start, count)
-  allSheets[activeIdx] = sheet
-  spreadsheetStore.recordStructureChange({
-    sheetIndex: activeIdx,
-    name: sheet.name,
-    type: 'deleteColumns',
-    index: start,
-    count,
-  })
+  spreadsheetStore.deleteColumnsAction(activeIdx, start, count)
   spreadsheetStore.setSelectedRange(null)
-  reloadGrid(allSheets)
-  spreadsheetStore.pushCheckpoint(allSheets)
+  reloadGrid(spreadsheetStore.sheets)
   notificationStore.show({ type: 'success', message: `${count} colonna/e eliminate.` })
 }
 
@@ -1547,6 +1684,7 @@ function buildMatcher() {
 }
 
 function previewSearch() {
+  currentSearchIndex.value = -1
   searchMatches.value = []
   if (!ensureDataLoaded()) return
   const matcher = buildMatcher()
@@ -1575,10 +1713,16 @@ function previewSearch() {
 function replaceAllMatches() {
   if (!ensureDataLoaded()) return
   if (searchMatches.value.length === 0) return
+  
+  const coords = searchMatches.value.map((m) => `${m.sheet}_${m.row}_${m.col}`)
+  
   searchMatches.value.forEach((m) => {
     setCellValueAndSync(m.row, m.col, m.after, m.sheet)
   })
   persistProgrammaticSnapshot({ reload: true })
+  
+  window.dispatchEvent(new CustomEvent('cells-replaced', { detail: { coords } }))
+  
   notificationStore.show({ type: 'success', message: `Sostituite ${searchMatches.value.length} occorrenze` })
   showSearchModal.value = false
 }
@@ -2418,9 +2562,14 @@ async function saveCurrentCellAsTemplate() {
   padding: 7px 10px;
   border-bottom: 1px solid var(--border-light);
   font-size: 12px;
+  transition: background var(--transition);
 }
 .preview-row:last-child { border-bottom: none; }
 .preview-row code { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.preview-row.active {
+  background: var(--accent-light) !important;
+  border-left: 3px solid var(--accent);
+}
 
 .compare-card {
   border-bottom: 1px solid var(--border-light);

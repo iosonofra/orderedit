@@ -25,9 +25,23 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/xlsx', require('./routes/xlsx'));
 app.use('/api/templates', require('./routes/templates'));
+app.use('/api/couriers', require('./routes/couriers'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
+
+// Serve static frontend in production
+const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api/')) {
+      res.sendFile(path.join(frontendDist, 'index.html'));
+    } else {
+      res.status(404).json({ error: 'API route not found' });
+    }
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`✅ OrderEdit backend running on http://localhost:${PORT}`);
