@@ -92,6 +92,38 @@
           </button>
         </div>
       </div>
+
+      <!-- Filters Row -->
+      <div class="filters-row" v-if="templateStore.templates.length > 0">
+        <div class="filter-chips">
+          <button
+            class="filter-chip"
+            :class="{ active: currentFilter === 'all' }"
+            @click="currentFilter = 'all'"
+          >
+            Tutti
+            <span class="chip-count">{{ templateStore.templates.length }}</span>
+          </button>
+          <button
+            class="filter-chip"
+            :class="{ active: currentFilter === 'issues' }"
+            @click="currentFilter = 'issues'"
+          >
+            Con anomalie
+            <span class="chip-count count-danger" v-if="totalIssuesCount > 0">{{ totalIssuesCount }}</span>
+            <span class="chip-count" v-else>0</span>
+          </button>
+          <button
+            class="filter-chip"
+            :class="{ active: currentFilter === 'modified' }"
+            @click="currentFilter = 'modified'"
+          >
+            Modificati
+            <span class="chip-count count-success" v-if="modifiedSessionIds.length > 0">{{ modifiedSessionIds.length }}</span>
+            <span class="chip-count" v-else>0</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Table Card -->
@@ -99,15 +131,24 @@
       <table class="catalog-table">
         <thead>
           <tr>
+            <th class="col-checkbox">
+              <input
+                type="checkbox"
+                :checked="isAllPageSelected"
+                :indeterminate="isSomePageSelected && !isAllPageSelected"
+                @change="toggleSelectAllPage"
+              />
+            </th>
             <th class="col-id">ID prodotto</th>
             <th class="col-name">Nome corretto</th>
             <th class="col-actions">Azioni</th>
           </tr>
         </thead>
-        <tbody>
+        <TransitionGroup tag="tbody" name="table-list">
           <!-- Add New Row (animated) -->
           <Transition name="row-slide">
             <tr v-if="addingRow" class="new-row">
+              <td class="col-checkbox"></td>
               <td class="col-id">
                 <input
                   ref="newIdInput"
@@ -150,25 +191,28 @@
                       </template>
                     </div>
                   </div>
+                  <!-- Inline Confirm Actions -->
+                  <div class="editor-actions">
+                    <button class="btn btn-success compact-btn" @click="saveNewRow">Salva modifiche</button>
+                    <button class="btn btn-secondary compact-btn" @click="addingRow = false">Annulla</button>
+                  </div>
                 </div>
               </td>
-              <td class="col-actions">
-                <div class="action-btns-always">
-                  <button class="btn btn-success compact-btn" @click="saveNewRow">Salva</button>
-                  <button class="catalog-action-btn delete" @click="addingRow = false" title="Annulla">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </button>
-                </div>
-              </td>
+              <td class="col-actions"></td>
             </tr>
           </Transition>
 
           <!-- Data Rows -->
-          <tr v-for="t in paginatedTemplates" :key="t.id" class="data-row">
+          <tr v-for="t in paginatedTemplates" :key="t.id" class="data-row" :class="{ 'row-has-anomalies': templateIssuesMap[t.id], 'row-is-modified': modifiedSessionIds.includes(t.id), 'row-is-selected': selectedIds.includes(t.id) }">
+            <td class="col-checkbox">
+              <input
+                type="checkbox"
+                :value="t.id"
+                v-model="selectedIds"
+              />
+            </td>
             <td class="col-id">
-              <span class="id-badge">{{ t.id }}</span>
+              <span class="id-badge" v-html="highlightText(t.id, search)"></span>
             </td>
             <td class="col-name">
               <div v-if="editingId === t.id" class="edit-row-wrapper">
@@ -201,19 +245,34 @@
                     </template>
                   </div>
                 </div>
+                <!-- Inline Confirm Actions -->
+                <div class="editor-actions">
+                  <button class="btn btn-success compact-btn" @click="saveEdit(t)">Salva modifiche</button>
+                  <button class="btn btn-secondary compact-btn" @click="cancelEdit">Annulla</button>
+                </div>
               </div>
-              <span v-else class="name-text" v-html="t.name"></span>
+              <div v-else class="name-display-wrapper" @dblclick="startEdit(t)" title="Doppio clic per modificare rapidamente">
+                <span class="name-text" v-html="highlightText(t.name, search)"></span>
+                <!-- Anomaly Warning Icon with Tooltip -->
+                <div class="anomaly-warning-wrapper" v-if="templateIssuesMap[t.id]">
+                  <svg class="anomaly-warning-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                  <div class="anomaly-tooltip">
+                    <div class="tooltip-title">Anomalie rilevate:</div>
+                    <ul class="tooltip-list">
+                      <li v-for="(issue, idx) in templateIssuesMap[t.id]" :key="idx">{{ issue }}</li>
+                    </ul>
+                  </div>
+                </div>
+                <!-- Modified Badge -->
+                <span class="session-modified-badge" v-if="modifiedSessionIds.includes(t.id)">Modificato</span>
+              </div>
             </td>
             <td class="col-actions">
-              <div class="action-btns-always" v-if="editingId === t.id">
-                <button class="btn btn-success compact-btn" @click="saveEdit(t)">Salva</button>
-                <button class="catalog-action-btn delete" @click="cancelEdit" title="Annulla">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                </button>
-              </div>
-              <div class="action-btns-hover" v-else>
+              <div class="action-btns-hover" v-if="editingId !== t.id">
                 <button class="catalog-action-btn edit" :id="`btn-edit-${t.id}`" @click="startEdit(t)" title="Modifica">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -227,15 +286,27 @@
               </div>
             </td>
           </tr>
-        </tbody>
+        </TransitionGroup>
       </table>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="pagination-bar">
-        <span class="pagination-range">
-          Mostra {{ rangeStart }}–{{ rangeEnd }} di {{ filteredTemplates.length }}
-        </span>
-        <div class="pagination-controls">
+      <div class="pagination-bar">
+        <div class="pagination-left">
+          <span class="pagination-range">
+            Mostra {{ rangeStart }}–{{ rangeEnd }} di {{ filteredTemplates.length }}
+          </span>
+          <div class="pagination-density" v-if="filteredTemplates.length > 0">
+            <span class="density-label">Elementi per pagina:</span>
+            <select v-model="itemsPerPage" class="density-select">
+              <option :value="25">25</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+              <option :value="250">250</option>
+              <option :value="10000">Tutti</option>
+            </select>
+          </div>
+        </div>
+        <div class="pagination-controls" v-if="totalPages > 1">
           <button class="pagination-btn" :disabled="currentPage === 1" @click="currentPage--" title="Pagina precedente">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="15 18 9 12 15 6"/>
@@ -283,6 +354,39 @@
       </div>
     </div>
 
+    <!-- Floating Bulk Actions Bar -->
+    <Transition name="slide-up">
+      <div class="bulk-actions-bar" v-if="selectedIds.length > 0">
+        <div class="bulk-info">
+          <span class="bulk-count">{{ selectedIds.length }}</span>
+          <span class="bulk-label">selezionati</span>
+        </div>
+        <div class="bulk-actions">
+          <div class="bulk-export-wrapper">
+            <button class="btn btn-secondary compact-btn" @click="showBulkExportMenu = !showBulkExportMenu">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Esporta selezionati
+            </button>
+            <Transition name="dropdown-anim">
+              <div v-if="showBulkExportMenu" class="bulk-export-menu">
+                <button class="dropdown-item" @click="exportSelected('csv')">CSV</button>
+                <button class="dropdown-item" @click="exportSelected('json')">JSON</button>
+              </div>
+            </Transition>
+          </div>
+          <button class="btn btn-danger compact-btn" @click="deleteSelected">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+            </svg>
+            Elimina
+          </button>
+          <button class="bulk-cancel-btn" @click="selectedIds = []">Annulla</button>
+        </div>
+      </div>
+    </Transition>
+
     <ImportModal v-if="showImport" @close="showImport = false" @imported="templateStore.fetchAll()" />
     <CleanerModal v-if="showCleaner" @close="showCleaner = false" @cleaned="templateStore.fetchAll()" />
   </div>
@@ -308,10 +412,17 @@ const addingRow = ref(false)
 const newRow = ref({ id: '', name: '' })
 const newIdInput = ref(null)
 
-const hasIssues = computed(() => {
+const currentFilter = ref('all')
+const modifiedSessionIds = ref([])
+
+const selectedIds = ref([])
+const showBulkExportMenu = ref(false)
+
+const templateIssuesMap = computed(() => {
   const templates = templateStore.templates
   const namesMap = {}
-  let issues = 0
+  const issues = {}
+
   for (const t of templates) {
     const key = String(t.name || '')
       .replace(/<\/?[^>]+(>|$)/g, '')
@@ -319,51 +430,109 @@ const hasIssues = computed(() => {
       .replace(/\s+/g, '')
       .trim()
     if (key) {
-      if (namesMap[key]) {
-        issues++
-      } else {
-        namesMap[key] = true
+      if (!namesMap[key]) {
+        namesMap[key] = []
       }
-    }
-    const openCount = (t.name.match(/<b>/gi) || []).length
-    const closeCount = (t.name.match(/<\/b>/gi) || []).length
-    if (openCount !== closeCount || /<b>\s*<\/b>/gi.test(t.name)) {
-      issues++
-    }
-    if (t.name !== t.name.trim() || /\s{2,}/g.test(t.name)) {
-      issues++
-    }
-    if (t.id !== t.id.trim() || /\s/g.test(t.id) || !t.id) {
-      issues++
+      namesMap[key].push(t.id)
     }
   }
-  return issues > 0
+
+  for (const t of templates) {
+    const localIssues = []
+    
+    const key = String(t.name || '')
+      .replace(/<\/?[^>]+(>|$)/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .trim()
+    if (key && namesMap[key] && namesMap[key].length > 1) {
+      localIssues.push('Nome duplicato nel catalogo')
+    }
+
+    const openCount = (t.name.match(/<b>/gi) || []).length
+    const closeCount = (t.name.match(/<\/b>/gi) || []).length
+    if (openCount !== closeCount) {
+      localIssues.push('Tag <b> sbilanciati (apertura/chiusura)')
+    } else if (/<b>\s*<\/b>/gi.test(t.name)) {
+      localIssues.push('Tag <b> vuoto')
+    }
+
+    if (t.name !== t.name.trim() || /\s{2,}/g.test(t.name)) {
+      localIssues.push('Spazi non normalizzati (multipli, iniziali o finali)')
+    }
+
+    if (t.id !== t.id.trim() || /\s/g.test(t.id) || !t.id) {
+      localIssues.push('ID non valido (contiene spazi o è vuoto)')
+    }
+
+    if (localIssues.length > 0) {
+      issues[t.id] = localIssues
+    }
+  }
+  return issues
 })
+
+const hasIssues = computed(() => Object.keys(templateIssuesMap.value).length > 0)
+const totalIssuesCount = computed(() => Object.keys(templateIssuesMap.value).length)
 
 onMounted(() => templateStore.fetchAll())
 
 const filteredTemplates = computed(() => {
-  const q = search.value.toLowerCase()
-  if (!q) return templateStore.templates
-  return templateStore.templates.filter(
+  let list = templateStore.templates
+  
+  if (currentFilter.value === 'issues') {
+    list = list.filter(t => templateIssuesMap.value[t.id])
+  } else if (currentFilter.value === 'modified') {
+    list = list.filter(t => modifiedSessionIds.value.includes(t.id))
+  }
+  
+  const q = search.value.toLowerCase().trim()
+  if (!q) return list
+  
+  return list.filter(
     (t) => t.id.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)
   )
 })
 
-const currentPage = ref(1)
-const itemsPerPage = 50
-
-const totalPages = computed(() => Math.ceil(filteredTemplates.value.length / itemsPerPage) || 1)
-
-const rangeStart = computed(() => (currentPage.value - 1) * itemsPerPage + 1)
-const rangeEnd = computed(() => Math.min(currentPage.value * itemsPerPage, filteredTemplates.value.length))
-
-const paginatedTemplates = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  return filteredTemplates.value.slice(start, start + itemsPerPage)
+const isAllPageSelected = computed(() => {
+  const pageIds = paginatedTemplates.value.map(t => t.id)
+  if (pageIds.length === 0) return false
+  return pageIds.every(id => selectedIds.value.includes(id))
 })
 
-watch([search, () => templateStore.templates.length], () => {
+const isSomePageSelected = computed(() => {
+  const pageIds = paginatedTemplates.value.map(t => t.id)
+  return pageIds.some(id => selectedIds.value.includes(id))
+})
+
+function toggleSelectAllPage() {
+  const pageIds = paginatedTemplates.value.map(t => t.id)
+  if (isAllPageSelected.value) {
+    selectedIds.value = selectedIds.value.filter(id => !pageIds.includes(id))
+  } else {
+    const toAdd = pageIds.filter(id => !selectedIds.value.includes(id))
+    selectedIds.value.push(...toAdd)
+  }
+}
+
+watch([search, currentFilter], () => {
+  selectedIds.value = []
+})
+
+const currentPage = ref(1)
+const itemsPerPage = ref(50)
+
+const totalPages = computed(() => Math.ceil(filteredTemplates.value.length / itemsPerPage.value) || 1)
+
+const rangeStart = computed(() => (currentPage.value - 1) * itemsPerPage.value + 1)
+const rangeEnd = computed(() => Math.min(currentPage.value * itemsPerPage.value, filteredTemplates.value.length))
+
+const paginatedTemplates = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  return filteredTemplates.value.slice(start, start + itemsPerPage.value)
+})
+
+watch([search, () => templateStore.templates.length, currentFilter, itemsPerPage], () => {
   currentPage.value = 1
 })
 
@@ -375,6 +544,65 @@ function startEdit(t) {
 function cancelEdit() {
   editingId.value = null
   editingName.value = ''
+}
+
+function highlightText(text, query) {
+  if (!text) return ''
+  if (!query) return text
+  const escapedQuery = query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+  const regex = new RegExp(`(${escapedQuery})`, 'gi')
+  
+  const parts = String(text).split(/(<\/?[^>]+>)/g)
+  return parts.map(part => {
+    if (part.startsWith('<') && part.endsWith('>')) {
+      return part
+    }
+    return part.replace(regex, '<mark class="search-highlight">$1</mark>')
+  }).join('')
+}
+
+function exportSelected(format) {
+  showBulkExportMenu.value = false
+  const selectedTemplates = templateStore.templates.filter(t => selectedIds.value.includes(t.id))
+  if (selectedTemplates.length === 0) return
+
+  if (format === 'json') {
+    const content = JSON.stringify(selectedTemplates, null, 2)
+    const blob = new Blob([content], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `templates_selezionati.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  } else {
+    let csvContent = 'ID prodotto,Nome corretto\n'
+    for (const t of selectedTemplates) {
+      const cleanedName = t.name.replace(/"/g, '""')
+      csvContent += `"${t.id}","${cleanedName}"\n`
+    }
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `templates_selezionati.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+  notificationStore.show({ type: 'success', message: `${selectedTemplates.length} template esportati` })
+}
+
+async function deleteSelected() {
+  if (!window.confirm(`Eliminare i ${selectedIds.value.length} template selezionati?`)) return
+  try {
+    await Promise.all(selectedIds.value.map(id => templateStore.remove(id)))
+    notificationStore.show({ type: 'success', message: `${selectedIds.value.length} template eliminati` })
+    selectedIds.value = []
+  } catch {}
 }
 
 function makeBold(inputId, target) {
@@ -485,6 +713,9 @@ async function saveEdit(t) {
   try {
     await templateStore.update(t.id, editingName.value.trim())
     notificationStore.show({ type: 'success', message: `Template ${t.id} aggiornato` })
+    if (!modifiedSessionIds.value.includes(t.id)) {
+      modifiedSessionIds.value.push(t.id)
+    }
     cancelEdit()
   } catch {}
 }
@@ -507,6 +738,9 @@ async function saveNewRow() {
   try {
     await templateStore.create(id, name)
     notificationStore.show({ type: 'success', message: `Template ${id} aggiunto` })
+    if (!modifiedSessionIds.value.includes(id)) {
+      modifiedSessionIds.value.push(id)
+    }
     addingRow.value = false
   } catch {}
 }
@@ -536,6 +770,9 @@ async function doExport(format) {
   overflow: hidden;
   padding: 20px 24px;
   gap: 16px;
+  max-width: 1300px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* ========== Hero Header ========== */
@@ -551,12 +788,33 @@ async function doExport(format) {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 20px 24px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
+  padding: 24px 28px;
+  background: linear-gradient(135deg, rgba(27, 32, 48, 0.9) 0%, rgba(21, 25, 38, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: 4px solid var(--accent);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+:root[data-theme='light'] .catalog-hero-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(244, 247, 252, 0.95) 100%);
+  border: 1px solid rgba(55, 104, 214, 0.08);
+  border-left: 4px solid var(--accent);
+  box-shadow: 0 10px 30px rgba(55, 104, 214, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.catalog-hero-card::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(92, 141, 246, 0.08) 0%, rgba(92, 141, 246, 0) 70%);
+  pointer-events: none;
 }
 
 .hero-left {
@@ -881,11 +1139,12 @@ async function doExport(format) {
 
 /* ========== Inline Action Buttons (show on hover) ========== */
 .action-btns-hover {
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  opacity: 0.55;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.data-row:hover .action-btns-hover {
+.data-row:hover .action-btns-hover,
+.action-btns-hover:focus-within {
   opacity: 1;
 }
 
@@ -954,20 +1213,20 @@ async function doExport(format) {
 
 .edit-row {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
 }
 
 .visual-bold-editor {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 6px 10px;
-  background: var(--bg-secondary);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-sm);
-  backdrop-filter: blur(8px);
-  margin-top: 4px;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-top: 8px;
+  box-shadow: var(--shadow-sm);
 }
 
 .editor-label {
@@ -981,37 +1240,51 @@ async function doExport(format) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  font-size: 13px;
-  color: var(--text-primary);
-  line-height: 1.6;
+  gap: 2px;
+  padding: 8px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  margin-top: 4px;
 }
 
 .word-token {
   display: inline-block;
   cursor: pointer;
-  padding: 1px 4px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  margin: 3px 2px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
 }
 
 .word-token:hover {
-  background: rgba(99, 102, 241, 0.05);
+  background: var(--bg-hover);
   color: var(--accent);
-  transform: translateY(-0.5px);
+  border-color: var(--accent);
+  transform: translateY(-1px);
 }
 
 .word-token.is-bold {
   font-weight: 700;
-  color: var(--accent);
-  background: rgba(99, 102, 241, 0.09);
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.05);
-  border: 1px solid rgba(99, 102, 241, 0.12);
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-accent-glow);
+}
+
+:root[data-theme='light'] .word-token.is-bold {
+  color: #ffffff;
 }
 
 .word-token.is-bold:hover {
-  background: rgba(99, 102, 241, 0.14);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.1);
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  transform: translateY(-1px);
 }
 
 .space-token {
@@ -1022,20 +1295,21 @@ async function doExport(format) {
 
 .inline-input {
   width: 100%;
-  padding: 6px 10px;
+  padding: 8px 12px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 12px;
+  font-size: 13px;
   outline: none;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .inline-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-light);
+  box-shadow: 0 0 0 2.5px var(--accent-light);
+  background: var(--bg-card);
 }
 
 .compact-btn {
@@ -1077,12 +1351,57 @@ async function doExport(format) {
   border-top: 1px solid var(--border);
   background: var(--bg-secondary);
   flex-shrink: 0;
+  gap: 16px;
+}
+
+.pagination-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .pagination-range {
   font-size: 11px;
   color: var(--text-muted);
   font-weight: 500;
+}
+
+.pagination-density {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.density-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.density-select {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 20px 3px 8px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238893a8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 10px;
+}
+
+.density-select:hover,
+.density-select:focus {
+  border-color: var(--accent);
+  color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%235c8df6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
 }
 
 .pagination-controls {
@@ -1170,5 +1489,376 @@ async function doExport(format) {
 
 .empty-actions {
   margin-top: 8px;
+}
+
+/* ========== Filters & Search Highlight ========== */
+.filters-row {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.filter-chips {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  outline: none;
+}
+
+.filter-chip:hover {
+  background: var(--bg-hover);
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.filter-chip.active {
+  background: var(--accent-light);
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(92, 141, 246, 0.15);
+}
+
+.chip-count {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1.5px 6px;
+  border-radius: 10px;
+  background: var(--border-light);
+  color: var(--text-muted);
+  font-family: 'SF Mono', monospace;
+  transition: all 0.2s ease;
+}
+
+.filter-chip.active .chip-count {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.chip-count.count-danger {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.filter-chip.active .chip-count.count-danger {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.chip-count.count-success {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.filter-chip.active .chip-count.count-success {
+  background: var(--success);
+  color: #ffffff;
+}
+
+.search-highlight {
+  background: rgba(92, 141, 246, 0.24);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 2px;
+  box-shadow: 0 0 4px rgba(92, 141, 246, 0.15);
+}
+
+:root[data-theme='light'] .search-highlight {
+  background: rgba(55, 104, 214, 0.18);
+  font-weight: 600;
+}
+
+/* ========== Name Display & Anomalies ========== */
+.name-display-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.anomaly-warning-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--warning);
+  cursor: help;
+}
+
+.anomaly-warning-icon {
+  stroke: var(--warning);
+  fill: var(--warning-light);
+  animation: pulse-warn 2s infinite;
+}
+
+@keyframes pulse-warn {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.anomaly-tooltip {
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  width: 260px;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.anomaly-warning-wrapper:hover .anomaly-tooltip {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltip-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--warning);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tooltip-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tooltip-list li {
+  font-size: 11px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  position: relative;
+  padding-left: 10px;
+}
+
+.tooltip-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--warning);
+}
+
+/* ========== Session Modified Badge ========== */
+.session-modified-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--success);
+  background: var(--success-light);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+/* Custom row highlights */
+.row-has-anomalies {
+  background: rgba(245, 158, 11, 0.015);
+}
+.row-is-modified {
+  border-left: 3px solid var(--success);
+}
+
+/* ========== Checkbox Column & Selections ========== */
+.col-checkbox {
+  width: 46px;
+  text-align: center;
+  user-select: none;
+}
+
+.catalog-table th.col-checkbox,
+.catalog-table td.col-checkbox {
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.catalog-table input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.row-is-selected {
+  background: var(--bg-hover) !important;
+}
+
+/* ========== Floating Bulk Actions Bar ========== */
+.bulk-actions-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, rgba(27, 32, 48, 0.9) 0%, rgba(21, 25, 38, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 20px rgba(92, 141, 246, 0.12);
+  backdrop-filter: blur(12px);
+  z-index: 1000;
+  width: min(650px, calc(100vw - 32px));
+}
+
+:root[data-theme='light'] .bulk-actions-bar {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(244, 247, 252, 0.96) 100%);
+  border: 1px solid rgba(55, 104, 214, 0.15);
+  box-shadow: 0 10px 30px rgba(55, 104, 214, 0.15), 0 0 20px rgba(55, 104, 214, 0.05);
+}
+
+.bulk-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bulk-count {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  background: var(--accent);
+  padding: 2.5px 8px;
+  border-radius: 12px;
+  font-family: 'SF Mono', monospace;
+  box-shadow: var(--shadow-accent-glow);
+}
+
+:root[data-theme='light'] .bulk-count {
+  color: #ffffff;
+}
+
+.bulk-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bulk-export-wrapper {
+  position: relative;
+}
+
+.bulk-export-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  min-width: 120px;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+}
+
+.bulk-cancel-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.bulk-cancel-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+/* ========== Transitions ========== */
+.slide-up-enter-active {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-up-leave-active {
+  transition: all 0.2s ease;
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translate(-50%, 20px) scale(0.95);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 10px) scale(0.97);
+}
+
+.editor-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+/* ========== Table Row Transitions ========== */
+.table-list-enter-active,
+.table-list-leave-active {
+  transition: opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1), transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.table-list-enter-from,
+.table-list-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.table-list-move {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.name-display-wrapper {
+  cursor: pointer;
+  transition: background-color 0.16s ease;
+}
+
+.name-display-wrapper:hover .name-text {
+  text-decoration: underline rgba(92, 141, 246, 0.3) 1.5px;
 }
 </style>

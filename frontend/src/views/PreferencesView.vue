@@ -100,16 +100,38 @@
           </div>
           
           <div class="settings-form-grid">
-            <div class="setting-row">
+            <div class="setting-row theme-setting-row" style="align-items: flex-start;">
               <div class="setting-info">
                 <span class="setting-label">Tema dell'interfaccia</span>
                 <span class="setting-desc">Seleziona tra tema chiaro e tema scuro ad alto contrasto.</span>
               </div>
-              <div class="setting-control">
-                <select v-model="themeMode" class="input elegant-select" @change="saveThemeMode">
-                  <option value="light">Tema Chiaro</option>
-                  <option value="dark">Tema Scuro</option>
-                </select>
+              <div class="setting-control theme-options">
+                <button
+                  class="theme-card-btn light"
+                  :class="{ active: themeMode === 'light' }"
+                  @click="themeMode = 'light'; saveThemeMode()"
+                  type="button"
+                >
+                  <div class="theme-preview-box light-preview">
+                    <span class="preview-dot"></span>
+                    <span class="preview-line"></span>
+                    <span class="preview-line short"></span>
+                  </div>
+                  <span class="theme-label-text">Tema Chiaro</span>
+                </button>
+                <button
+                  class="theme-card-btn dark"
+                  :class="{ active: themeMode === 'dark' }"
+                  @click="themeMode = 'dark'; saveThemeMode()"
+                  type="button"
+                >
+                  <div class="theme-preview-box dark-preview">
+                    <span class="preview-dot"></span>
+                    <span class="preview-line"></span>
+                    <span class="preview-line short"></span>
+                  </div>
+                  <span class="theme-label-text">Tema Scuro</span>
+                </button>
               </div>
             </div>
 
@@ -191,66 +213,39 @@
               </button>
             </div>
 
-            <div class="presets-list-container">
-              <table class="data-table elegant-table">
-                <thead>
-                  <tr>
-                    <th>Nome preset</th>
-                    <th style="width: 180px; text-align: right">Azioni</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(preset, idx) in courierPresetStore.presets" :key="`${preset}-${idx}`">
-                    <td>
-                      <div v-if="editingCourierIndex === idx" class="elegant-edit-row">
-                        <input
-                          v-model="editingCourierName"
-                          class="input elegant-input compact-input"
-                          @keyup.enter="saveCourierPreset"
-                          @keyup.escape="cancelCourierEdit"
-                        />
-                      </div>
-                      <span v-else class="preset-name-tag">
-                        <span class="tag-bullet"></span>
-                        {{ preset }}
-                      </span>
-                    </td>
-                    <td style="text-align: right">
-                      <div class="elegant-action-btns" v-if="editingCourierIndex === idx">
-                        <button class="btn btn-success compact-btn" @click="saveCourierPreset">Salva</button>
-                        <button class="btn btn-secondary compact-btn" @click="cancelCourierEdit">Annulla</button>
-                      </div>
-                      <div class="elegant-action-btns" v-else>
-                        <button class="btn btn-icon-only" @click="startCourierEdit(idx, preset)" title="Modifica">
-                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                          </svg>
-                        </button>
-                        <button class="btn btn-icon-only danger" @click="removeCourierPreset(idx)" title="Elimina">
-                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            <line x1="10" y1="11" x2="10" y2="17"></line>
-                            <line x1="14" y1="11" x2="14" y2="17"></line>
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr v-if="courierPresetStore.presets.length === 0">
-                    <td colspan="2" class="empty-state-row">
-                      <div class="empty-presets-state">
-                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon">
-                          <rect x="1" y="3" width="15" height="13"></rect>
-                          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                        </svg>
-                        <p>Nessun preset corriere configurato sul server.</p>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="presets-list-container" style="border: none; background: transparent;">
+              <div class="courier-chips-grid">
+                <div
+                  v-for="(preset, idx) in courierPresetStore.presets"
+                  :key="`${preset}-${idx}`"
+                  class="courier-chip"
+                  :class="{ editing: editingCourierIndex === idx }"
+                >
+                  <div v-if="editingCourierIndex === idx" class="chip-edit-wrapper">
+                    <input
+                      v-model="editingCourierName"
+                      class="input chip-edit-input"
+                      @keyup.enter="saveCourierPreset"
+                      @keyup.escape="cancelCourierEdit"
+                      autofocus
+                    />
+                    <button class="btn-chip-action check" @click="saveCourierPreset" title="Conferma">✓</button>
+                    <button class="btn-chip-action cancel" @click="cancelCourierEdit" title="Annulla">×</button>
+                  </div>
+                  <div v-else class="chip-display-wrapper">
+                    <span class="chip-name" @dblclick="startCourierEdit(idx, preset)">{{ preset }}</span>
+                    <button class="chip-icon-btn edit" @click="startCourierEdit(idx, preset)" title="Modifica">✎</button>
+                    <button class="chip-icon-btn delete" @click="removeCourierPreset(idx)" title="Elimina">×</button>
+                  </div>
+                </div>
+                <div v-if="courierPresetStore.presets.length === 0" class="empty-presets-state" style="width: 100%;">
+                  <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon">
+                    <rect x="1" y="3" width="15" height="13"></rect>
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                  </svg>
+                  <p>Nessun preset corriere configurato sul server.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -375,6 +370,15 @@
                   <span class="db-stat-value">{{ formatBytes(backupStats.totalBytes) }}</span>
                 </div>
               </div>
+              <div class="db-progress-container" v-if="backupEnabled">
+                <div class="db-progress-meta">
+                  <span class="progress-text">Utilizzo archivio backup: <strong>{{ backupStats.count }}</strong> su <strong>{{ backupLimit }}</strong> copie</span>
+                  <span class="progress-percentage">{{ Math.round((backupStats.count / Math.max(1, backupLimit)) * 100) }}%</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill" :class="{ 'warning': (backupStats.count / Math.max(1, backupLimit)) >= 0.85 }" :style="{ width: `${Math.min(100, (backupStats.count / Math.max(1, backupLimit)) * 100)}%` }"></div>
+                </div>
+              </div>
               <div class="db-actions">
                 <button class="btn btn-secondary btn-with-icon" @click="loadBackupStats" :disabled="backupLoading">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :class="{ 'animate-spin': backupLoading }">
@@ -447,6 +451,22 @@
                   <option value="warning">Solo avvisi e messaggi di errore</option>
                   <option value="error">Solo messaggi di errore bloccanti</option>
                 </select>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Testa le impostazioni</span>
+                <span class="setting-desc">Invia una notifica di prova per verificare il posizionamento e la durata scelti.</span>
+              </div>
+              <div class="setting-control">
+                <button class="btn btn-secondary btn-with-icon" @click="triggerTestNotification" type="button">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                  </svg>
+                  Invia notifica di test
+                </button>
               </div>
             </div>
           </div>
@@ -564,10 +584,40 @@
             <div class="backup-section-card" style="flex-direction: column; align-items: stretch; gap: 16px;">
               <div class="section-card-info" style="max-width: 100%;">
                 <span class="section-card-title">Importa Configurazione</span>
-                <span class="section-card-desc">Seleziona o trascina un file di backup JSON precedentemente esportato. Verrà applicato immediatamente sovrascrivendo le impostazioni locali e i preset dei corrieri sul server.</span>
+                <span class="section-card-desc">Seleziona o trascina un file di backup JSON precedentemente esportato. Verrà applicato dopo la conferma dell'anteprima, sovrascrivendo le impostazioni locali e i preset dei corrieri sul server.</span>
               </div>
               
+              <!-- Anteprima del backup caricato (conferma prima di applicare) -->
+              <div v-if="pendingBackupData" class="pending-backup-card animate-fade-in">
+                <div class="pending-header">
+                  <span class="pending-title">Pronto per l'importazione</span>
+                  <button class="btn btn-secondary btn-sm" @click="clearPendingBackup" type="button">Annulla</button>
+                </div>
+                <div class="pending-meta-grid">
+                  <div class="pending-meta-item">
+                    <span class="p-label">Nome File</span>
+                    <span class="p-val">{{ pendingBackupFile.name }} ({{ formatBytes(pendingBackupFile.size) }})</span>
+                  </div>
+                  <div class="pending-meta-item">
+                    <span class="p-label">Esportato il</span>
+                    <span class="p-val">{{ formatDate(pendingBackupData.exportedAt) }}</span>
+                  </div>
+                  <div class="pending-meta-item">
+                    <span class="p-label">Tema Rilevato</span>
+                    <span class="p-val" style="text-transform: capitalize;">{{ pendingBackupData.theme === 'dark' ? 'Scuro' : 'Chiaro' }}</span>
+                  </div>
+                  <div class="pending-meta-item">
+                    <span class="p-label">Preset Corrieri</span>
+                    <span class="p-val">{{ pendingBackupData.courierPresets?.length || 0 }} elementi</span>
+                  </div>
+                </div>
+                <button class="btn btn-success btn-apply-backup" @click="applyPendingBackup" type="button">
+                  Conferma e Applica Configurazione
+                </button>
+              </div>
+
               <div 
+                v-else
                 class="drag-drop-zone"
                 :class="{ active: isDragging }"
                 @dragover.prevent="isDragging = true"
@@ -655,6 +705,8 @@ const eanHeaderName = ref('EAN')
 
 const isDragging = ref(false)
 const backupFileInput = ref(null)
+const pendingBackupData = ref(null)
+const pendingBackupFile = ref(null)
 
 onMounted(() => {
   courierPresetStore.load()
@@ -745,6 +797,12 @@ function handleFileDrop(event) {
   processBackupFile(file)
 }
 
+function clearPendingBackup() {
+  pendingBackupData.value = null
+  pendingBackupFile.value = null
+  if (backupFileInput.value) backupFileInput.value.value = ''
+}
+
 function processBackupFile(file) {
   if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
     notificationStore.show({ type: 'warning', message: 'Formato file non valido. Carica solo file .json.' })
@@ -752,71 +810,103 @@ function processBackupFile(file) {
   }
   
   const reader = new FileReader()
-  reader.onload = async (e) => {
+  reader.onload = (e) => {
     try {
       const backup = JSON.parse(e.target.result)
       if (!backup || typeof backup !== 'object') {
         notificationStore.show({ type: 'warning', message: 'Il file di backup caricato non è valido.' })
         return
       }
-      
-      let importedSomething = false
-      
-      // 1. Theme
-      if (backup.theme === 'light' || backup.theme === 'dark') {
-        themeMode.value = backup.theme
-        saveThemeMode()
-        importedSomething = true
-      }
-      
-      // 2. Editor & Spreadsheet settings
-      if (backup.editor && typeof backup.editor === 'object') {
-        spreadsheetStore.importSettingsData(backup.editor)
-        
-        // Update local ref values to reflect instantly
-        exportMode.value = spreadsheetStore.exportNamingMode
-        exportSuffix.value = spreadsheetStore.exportSuffix
-        showExportSummary.value = spreadsheetStore.showExportSummary
-        askExportSaveLocation.value = spreadsheetStore.askExportSaveLocation
-        freezePanesEnabled.value = spreadsheetStore.freezePanesEnabled
-        recoveryEnabled.value = spreadsheetStore.recoveryEnabled
-        autoFitOnLoad.value = spreadsheetStore.autoFitOnLoad
-        highlightKeyColumns.value = spreadsheetStore.highlightKeyColumns
-        backupEnabled.value = spreadsheetStore.backupEnabled
-        backupLimit.value = spreadsheetStore.backupLimit
-        
-        idHeaderName.value = spreadsheetStore.idHeaderName
-        nameHeaderName.value = spreadsheetStore.nameHeaderName
-        courierHeaderName.value = spreadsheetStore.courierHeaderName
-        eanHeaderName.value = spreadsheetStore.eanHeaderName
-        importedSomething = true
-      }
-      
-      // 3. Notifications settings
-      if (backup.notifications && typeof backup.notifications === 'object') {
-        notificationStore.importPrefsData(backup.notifications)
-        notificationPosition.value = notificationStore.position
-        notificationDuration.value = notificationStore.duration
-        notificationLevel.value = notificationStore.level
-        importedSomething = true
-      }
-      
-      // 4. Courier Presets
-      if (Array.isArray(backup.courierPresets)) {
-        await courierPresetStore.importPresets(backup.courierPresets)
-        importedSomething = true
-      }
-      
-      if (importedSomething) {
-        notificationStore.show({ type: 'success', message: 'Backup importato e applicato correttamente!' })
-      } else {
-        notificationStore.show({ type: 'warning', message: 'Nessun dato di configurazione valido trovato nel file.' })
+      pendingBackupData.value = backup
+      pendingBackupFile.value = {
+        name: file.name,
+        size: file.size
       }
     } catch (err) {
       notificationStore.show({ type: 'error', message: `Errore durante il parsing del backup: ${err.message}` })
     }
   }
   reader.readAsText(file)
+}
+
+async function applyPendingBackup() {
+  if (!pendingBackupData.value) return
+  const backup = pendingBackupData.value
+  try {
+    let importedSomething = false
+    
+    // 1. Theme
+    if (backup.theme === 'light' || backup.theme === 'dark') {
+      themeMode.value = backup.theme
+      saveThemeMode()
+      importedSomething = true
+    }
+    
+    // 2. Editor & Spreadsheet settings
+    if (backup.editor && typeof backup.editor === 'object') {
+      spreadsheetStore.importSettingsData(backup.editor)
+      
+      // Update local ref values to reflect instantly
+      exportMode.value = spreadsheetStore.exportNamingMode
+      exportSuffix.value = spreadsheetStore.exportSuffix
+      showExportSummary.value = spreadsheetStore.showExportSummary
+      askExportSaveLocation.value = spreadsheetStore.askExportSaveLocation
+      freezePanesEnabled.value = spreadsheetStore.freezePanesEnabled
+      recoveryEnabled.value = spreadsheetStore.recoveryEnabled
+      autoFitOnLoad.value = spreadsheetStore.autoFitOnLoad
+      highlightKeyColumns.value = spreadsheetStore.highlightKeyColumns
+      backupEnabled.value = spreadsheetStore.backupEnabled
+      backupLimit.value = spreadsheetStore.backupLimit
+      
+      idHeaderName.value = spreadsheetStore.idHeaderName
+      nameHeaderName.value = spreadsheetStore.nameHeaderName
+      courierHeaderName.value = spreadsheetStore.courierHeaderName
+      eanHeaderName.value = spreadsheetStore.eanHeaderName
+      importedSomething = true
+    }
+    
+    // 3. Notifications settings
+    if (backup.notifications && typeof backup.notifications === 'object') {
+      notificationStore.importPrefsData(backup.notifications)
+      notificationPosition.value = notificationStore.position
+      notificationDuration.value = notificationStore.duration
+      notificationLevel.value = notificationStore.level
+      importedSomething = true
+    }
+    
+    // 4. Courier Presets
+    if (Array.isArray(backup.courierPresets)) {
+      await courierPresetStore.importPresets(backup.courierPresets)
+      importedSomething = true
+    }
+    
+    if (importedSomething) {
+      notificationStore.show({ type: 'success', message: 'Backup importato e applicato correttamente!' })
+    } else {
+      notificationStore.show({ type: 'warning', message: 'Nessun dato di configurazione valido trovato nel file.' })
+    }
+    clearPendingBackup()
+  } catch (err) {
+    notificationStore.show({ type: 'error', message: `Errore durante il ripristino: ${err.message}` })
+  }
+}
+
+function formatDate(isoString) {
+  if (!isoString) return '-'
+  try {
+    const d = new Date(isoString)
+    if (Number.isNaN(d.getTime())) return isoString
+    return d.toLocaleString('it-IT')
+  } catch {
+    return isoString
+  }
+}
+
+function triggerTestNotification() {
+  notificationStore.show({
+    type: 'success',
+    message: 'Test notifica riuscito! OrderEdit è configurato correttamente.'
+  })
 }
 
 async function handleFactoryReset() {
@@ -1110,6 +1200,7 @@ async function deleteBackups() {
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   outline: none;
+  position: relative;
 }
 
 .sidebar-tab-btn:hover {
@@ -1128,6 +1219,18 @@ async function deleteBackups() {
   color: var(--accent);
   border-color: rgba(92, 141, 246, 0.18);
   font-weight: 600;
+}
+
+.sidebar-tab-btn.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  background: var(--accent);
+  border-radius: 0 4px 4px 0;
+  transition: all var(--transition);
 }
 
 .tab-icon {
@@ -1267,10 +1370,9 @@ async function deleteBackups() {
   bottom: 0;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border);
-  transition: .2s;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   border-radius: 24px;
 }
-
 .slider:before {
   position: absolute;
   content: "";
@@ -1279,22 +1381,104 @@ async function deleteBackups() {
   left: 3px;
   bottom: 3px;
   background-color: var(--text-secondary);
-  transition: .2s;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
-
+.switch:hover .slider:before {
+  transform: scale(1.1);
+}
 input:checked + .slider {
   background-color: var(--accent);
   border-color: var(--accent);
 }
-
 input:checked + .slider:before {
   transform: translateX(20px);
   background-color: #ffffff;
 }
-
+.switch:hover input:checked + .slider:before {
+  transform: translateX(20px) scale(1.1);
+}
 input:focus + .slider {
   box-shadow: 0 0 1px var(--accent);
+}
+
+/* Theme Visual Cards Selection */
+.theme-options {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.theme-card-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  cursor: pointer;
+  width: 130px;
+  transition: all var(--transition);
+  outline: none;
+  font-family: inherit;
+}
+.theme-card-btn:hover {
+  border-color: var(--text-muted);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+.theme-card-btn.active {
+  border-color: var(--accent);
+  background: var(--bg-secondary);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.theme-preview-box {
+  width: 100px;
+  height: 60px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all var(--transition);
+}
+.light-preview {
+  background: #ffffff;
+}
+.dark-preview {
+  background: #1e293b;
+  border-color: #334155;
+}
+.preview-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.dark-preview .preview-dot {
+  background: #38bdf8;
+}
+.preview-line {
+  height: 5px;
+  border-radius: 2px;
+  width: 100%;
+}
+.light-preview .preview-line {
+  background: #e2e8f0;
+}
+.dark-preview .preview-line {
+  background: #334155;
+}
+.preview-line.short {
+  width: 60%;
+}
+.theme-label-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 /* Couriers Manager Styling */
@@ -1713,5 +1897,198 @@ input:focus + .slider {
   .settings-content {
     padding: 20px 16px;
   }
+}
+
+/* Courier Chips Grid Styling */
+.courier-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  min-height: 100px;
+}
+.courier-chip {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all var(--transition);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.courier-chip:hover {
+  border-color: var(--accent);
+  transform: translateY(-1.5px);
+  box-shadow: var(--shadow-sm);
+}
+.courier-chip.editing {
+  border-color: var(--accent);
+  background: var(--bg-secondary);
+}
+.chip-display-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.chip-name {
+  cursor: pointer;
+  color: var(--text-primary);
+}
+.chip-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+.chip-icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.chip-icon-btn.delete:hover {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+.chip-edit-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chip-edit-input {
+  border: 1px solid var(--accent);
+  padding: 3px 8px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  width: 120px;
+}
+.btn-chip-action {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+}
+.btn-chip-action.check {
+  color: var(--success);
+  border-color: var(--success);
+}
+.btn-chip-action.check:hover {
+  background: var(--success-light);
+}
+.btn-chip-action.cancel {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.btn-chip-action.cancel:hover {
+  background: var(--danger-light);
+}
+
+/* Backup Database Progress Bar */
+.db-progress-container {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.db-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+.progress-text {
+  color: var(--text-secondary);
+}
+.progress-percentage {
+  font-weight: 600;
+  color: var(--accent);
+}
+.progress-bar-bg {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.progress-bar-fill.warning {
+  background: #f97316;
+}
+
+/* Pending Backup Card preview */
+.pending-backup-card {
+  background: var(--bg-secondary);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+.pending-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+.pending-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.pending-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.pending-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.p-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+.p-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.btn-apply-backup {
+  width: 100%;
+  padding: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

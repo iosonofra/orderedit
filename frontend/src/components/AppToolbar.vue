@@ -293,15 +293,39 @@
           <div class="modal-body">
             <div class="preview-head">{{ diffSummary.total }} modifiche rilevate</div>
             <div v-if="!compareOnlyMode && diffSummary.groups?.length" class="diff-groups">
-              <div v-for="(group, idx) in diffSummary.groups" :key="idx" class="diff-group">
+              <button
+                class="diff-group"
+                :class="{ active: !selectedGroup }"
+                @click="selectedGroup = null"
+                type="button"
+              >
+                Tutte le modifiche
+              </button>
+              <button
+                v-for="(group, idx) in diffSummary.groups"
+                :key="idx"
+                class="diff-group"
+                :class="{ active: selectedGroup === group.label }"
+                @click="selectedGroup = selectedGroup === group.label ? null : group.label"
+                type="button"
+              >
                 <span class="diff-group-title">{{ group.label }}</span>
                 <span class="diff-group-count">{{ group.count }}</span>
-              </div>
+              </button>
             </div>
             <div class="preview-list">
               <div v-if="compareOnlyMode && diffSummary.items.length === 0" class="compare-empty">
                 Nessuna differenza rispetto al file originale.
               </div>
+
+              <!-- Riga di intestazione fissa (sticky) per la lista delle modifiche -->
+              <div v-if="!compareOnlyMode && filteredDiffItems.length > 0" class="preview-row preview-header-row">
+                <div class="diff-header-col">Posizione</div>
+                <div class="diff-header-col">Valore Precedente</div>
+                <div></div>
+                <div class="diff-header-col">Nuovo Valore</div>
+              </div>
+
               <div v-if="compareOnlyMode" v-for="(d, idx) in diffSummary.items.slice(0, 150)" :key="`cmp-${idx}`" class="compare-card">
                 <div class="compare-meta">{{ d.sheet }} · Riga {{ d.row }} · Col {{ d.col }}</div>
                 <div v-if="d.changeNote" class="compare-note">{{ d.changeNote }}</div>
@@ -318,11 +342,17 @@
                   </div>
                 </div>
               </div>
-              <div v-if="!compareOnlyMode" v-for="(d, idx) in diffSummary.items.slice(0, 150)" :key="idx" class="preview-row">
-                <span>{{ d.sheet }}!R{{ d.row }}C{{ d.col }}</span>
-                <code>{{ d.before }}</code>
-                <span>-></span>
-                <code>{{ d.after }}</code>
+              <div v-if="!compareOnlyMode" v-for="(d, idx) in filteredDiffItems.slice(0, 150)" :key="idx" class="preview-row">
+                <div class="diff-meta" :title="`${d.sheet}!R${d.row}C${d.col}`">
+                  <span class="diff-sheet">{{ d.sheet }}</span>
+                  <span class="diff-coord">Riga {{ d.row }} · {{ d.colLabel }}</span>
+                  <span v-if="d.changeNote" class="diff-note-inline" :title="d.changeNote">
+                    {{ d.changeNote }}
+                  </span>
+                </div>
+                <div class="diff-val diff-before" v-html="d.beforeHtml || '(vuoto)'"></div>
+                <span class="diff-arrow">→</span>
+                <div class="diff-val diff-after" v-html="d.afterHtml || '(vuoto)'"></div>
               </div>
             </div>
           </div>
@@ -456,6 +486,24 @@ function navigateSearch(direction) {
 const showDiffModal = ref(false)
 const compareOnlyMode = ref(false)
 const diffSummary = ref({ total: 0, items: [] })
+const selectedGroup = ref(null)
+
+const filteredDiffItems = computed(() => {
+  if (!selectedGroup.value) return diffSummary.value?.items || []
+  return (diffSummary.value?.items || []).filter((item) => {
+    let itemGroupLabel = ''
+    if (item.changeKind === 'merge') {
+      itemGroupLabel = `${item.sheet}: unioni celle`
+    } else if (item.changeKind === 'width') {
+      itemGroupLabel = `${item.sheet}: larghezze colonne`
+    } else if (item.changeKind === 'structure') {
+      itemGroupLabel = `${item.sheet}: struttura`
+    } else {
+      itemGroupLabel = `${item.sheet}: ${item.colLabel || `Col ${item.col}`}`
+    }
+    return itemGroupLabel === selectedGroup.value
+  })
+})
 
 const MIN_COLUMN_WIDTH = 72
 const MAX_COLUMN_WIDTH = 1000
@@ -2190,6 +2238,7 @@ function buildDiffSummary(currentSheets, originalSheets) {
 
 function openExportDiffModal() {
   if (!ensureDataLoaded()) return
+  selectedGroup.value = null
   const currentSheets = getCurrentSheets()
   const originalSheets = spreadsheetStore.originalSheets || []
   diffSummary.value = buildDiffSummary(currentSheets, originalSheets)
@@ -2204,6 +2253,7 @@ function openExportDiffModal() {
 function openCompareOriginalModal() {
   showBulkMenu.value = false
   if (!ensureDataLoaded()) return
+  selectedGroup.value = null
   const originalSheets = spreadsheetStore.originalSheets || []
   if (!Array.isArray(originalSheets) || originalSheets.length === 0) {
     notificationStore.show({ type: 'warning', message: 'File originale non disponibile per il confronto.' })
@@ -2489,7 +2539,7 @@ async function saveCurrentCellAsTemplate() {
   flex-direction: column;
   max-height: 86vh;
 }
-.modal-wide { max-width: 900px; }
+.modal-wide { max-width: 1350px; width: 96%; }
 .modal-header {
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
@@ -2532,6 +2582,18 @@ async function saveCurrentCellAsTemplate() {
   background: var(--bg-secondary);
   color: var(--text-secondary);
   font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition);
+}
+.diff-group:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-muted);
+}
+.diff-group.active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .diff-group-title {
   max-width: 240px;
@@ -2551,24 +2613,95 @@ async function saveCurrentCellAsTemplate() {
 .preview-list {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  max-height: 360px;
+  max-height: 600px;
   overflow: auto;
 }
 .preview-row {
   display: grid;
-  grid-template-columns: 120px 1fr 24px 1fr;
+  grid-template-columns: 180px 1fr 24px 1fr;
   gap: 8px;
   align-items: center;
-  padding: 7px 10px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--border-light);
   font-size: 12px;
   transition: background var(--transition);
 }
 .preview-row:last-child { border-bottom: none; }
-.preview-row code { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .preview-row.active {
   background: var(--accent-light) !important;
   border-left: 3px solid var(--accent);
+}
+.diff-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+.diff-sheet {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.diff-coord {
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.diff-val {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.45;
+  max-height: 100px;
+  overflow-y: auto;
+}
+.diff-before {
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px dashed rgba(239, 68, 68, 0.15);
+}
+.diff-after {
+  background: rgba(34, 197, 94, 0.04);
+  border: 1px dashed rgba(34, 197, 94, 0.15);
+}
+.diff-arrow {
+  text-align: center;
+  color: var(--text-muted);
+  font-weight: bold;
+}
+.preview-header-row {
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  z-index: 10;
+  border-bottom: 1px solid var(--border) !important;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.diff-header-col {
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+.diff-note-inline {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 4px;
+  padding: 2px 6px;
+  width: fit-content;
+  font-weight: 500;
+  white-space: normal;
+  line-height: 1.2;
 }
 
 .compare-card {
@@ -2638,32 +2771,25 @@ async function saveCurrentCellAsTemplate() {
 }
 
 :deep(.diff-chunk) {
-  text-decoration: underline;
-  text-decoration-color: #dc2626;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 2px;
+  text-decoration: none;
 }
 
 :deep(.diff-removed) {
   color: #b91c1c;
-  background: rgba(220, 38, 38, 0.14);
-  text-decoration: underline;
-  text-decoration-color: #dc2626;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 2px;
-  border-radius: 3px;
-  padding: 0 1px;
+  background: rgba(220, 38, 38, 0.15);
+  text-decoration: none;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-weight: 500;
 }
 
 :deep(.diff-added) {
   color: #166534;
-  background: rgba(22, 163, 74, 0.14);
-  text-decoration: underline;
-  text-decoration-color: #dc2626;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 2px;
-  border-radius: 3px;
-  padding: 0 1px;
+  background: rgba(22, 163, 74, 0.15);
+  text-decoration: none;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-weight: 500;
 }
 
 .compare-empty {
