@@ -67,10 +67,6 @@
 
       <div class="navbar-meta">
         <span v-if="spreadsheetStore.filename" class="filename-badge" :class="{ 'has-unsaved': spreadsheetStore.isUnsaved }">
-          <svg class="filename-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-          </svg>
           <span class="filename-text">{{ spreadsheetStore.filename }}</span>
           <span v-if="spreadsheetStore.isUnsaved" class="pulse-dot" title="Modifiche non salvate"></span>
         </span>
@@ -733,61 +729,61 @@ onBeforeUnmount(() => {
 }
 
 .segmented-control {
-  background: rgba(18, 22, 33, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(21, 25, 38, 0.4);
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 3px;
   display: flex;
-  gap: 3px;
+  gap: 2px;
   align-items: center;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: border-color var(--transition), background var(--transition);
 }
 
 :root[data-theme='light'] .segmented-control {
-  background: rgba(235, 240, 250, 0.75);
-  border-color: rgba(55, 104, 214, 0.12);
-  box-shadow: inset 0 1px 2px rgba(55, 104, 214, 0.05), 0 4px 12px rgba(55, 104, 214, 0.05);
+  background: rgba(237, 242, 255, 0.55);
+  border-color: rgba(55, 104, 214, 0.15);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .nav-link {
   display: flex;
   align-items: center;
   gap: 6.5px;
-  padding: 5px 14px;
+  padding: 5px 12px;
   border-radius: 999px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-muted);
   text-decoration: none;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   border: 1px solid transparent;
 }
 
 .nav-icon {
-  width: 14.5px;
-  height: 14.5px;
+  width: 14px;
+  height: 14px;
   stroke: currentColor;
-  stroke-width: 2.2px;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), stroke 0.2s ease;
+  stroke-width: 2px;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), stroke 0.2s ease;
   display: inline-block;
   flex-shrink: 0;
 }
 
 .nav-link:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 :root[data-theme='light'] .nav-link:hover {
-  background: rgba(55, 104, 214, 0.04);
+  background: rgba(55, 104, 214, 0.05);
 }
 
 .nav-link:hover .nav-icon {
-  transform: scale(1.16) translateY(-0.5px);
+  transform: scale(1.18) rotate(-4deg);
 }
 
 .nav-link:active {
@@ -797,16 +793,16 @@ onBeforeUnmount(() => {
 .nav-link--active {
   color: #ffffff !important;
   background: var(--accent) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
   font-weight: 600;
-  box-shadow: var(--shadow-accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-shadow: var(--shadow-accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 :root[data-theme='light'] .nav-link--active {
   color: #ffffff !important;
   background: var(--accent) !important;
   border-color: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: var(--shadow-accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: var(--shadow-accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .nav-link--active .nav-icon {
@@ -824,40 +820,18 @@ onBeforeUnmount(() => {
 .filename-badge {
   display: flex;
   align-items: center;
-  gap: 6.5px;
+  gap: 6px;
   max-width: 280px;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.01);
-  font-size: 11.5px;
-  font-weight: 500;
-  transition: all 0.22s ease;
-}
-
-.filename-icon {
-  width: 12px;
-  height: 12px;
-  stroke: currentColor;
-  flex-shrink: 0;
-  opacity: 0.75;
+  background: transparent;
+  font-size: 11px;
 }
 
 .filename-badge.has-unsaved {
-  border-color: rgba(245, 158, 11, 0.35) !important;
-  color: var(--warning) !important;
-  background: rgba(245, 158, 11, 0.06) !important;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.08);
-}
-
-:root[data-theme='light'] .filename-badge {
-  background: rgba(0, 0, 0, 0.01);
-}
-
-:root[data-theme='light'] .filename-badge.has-unsaved {
-  background: rgba(245, 158, 11, 0.05) !important;
-  border-color: rgba(245, 158, 11, 0.38) !important;
+  border-color: rgba(245, 158, 11, 0.3);
 }
 
 .filename-text {

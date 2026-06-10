@@ -85,6 +85,21 @@
           </svg>
           Backup & Ripristino
         </button>
+
+        <button
+          class="sidebar-tab-btn"
+          :class="{ active: activeTab === 'ai' }"
+          @click="activeTab = 'ai'"
+        >
+          <svg class="tab-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
+            <polyline points="7.5 19.79 7.5 14.6 12 12 16.5 14.6 16.5 19.79"></polyline>
+            <polyline points="12 12 12 22"></polyline>
+            <line x1="12" y1="6.81" x2="12" y2="12"></line>
+          </svg>
+          Integrazione AI
+        </button>
       </nav>
     </div>
 
@@ -661,23 +676,665 @@
           </div>
         </div>
 
+        <!-- SECTION 7: AI Integration -->
+        <div v-if="activeTab === 'ai'" class="ai-settings-tab-wrapper animate-fade-in">
+          
+          <!-- Card 0: Stato Integrazione -->
+          <div class="settings-card">
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Abilita Integrazione AI</span>
+                <span class="setting-desc">Mostra o nascondi il Tasto Smart AI nella barra degli strumenti principale.</span>
+              </div>
+              <div class="setting-control">
+                <label class="switch">
+                  <input v-model="aiStore.enabled" type="checkbox" @change="toggleAiEnabled" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Card 1: Credenziali e Modello -->
+          <div class="settings-card">
+            <div class="card-header">
+              <h3 class="card-title">Credenziali & Connessione API</h3>
+              <p class="card-subtitle">Configura il provider, le chiavi di autenticazione e il modello di riferimento per le chiamate esterne.</p>
+            </div>
+
+            <div class="settings-form-grid">
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Provider API</span>
+                  <span class="setting-desc">Seleziona il provider per la connessione al modello linguistico.</span>
+                </div>
+                <div class="setting-control">
+                  <select v-model="aiStore.provider" class="input elegant-select" @change="handleProviderChange">
+                    <option value="openrouter">OpenRouter (Consigliato)</option>
+                    <option value="groq">Groq (Ultra-veloce)</option>
+                    <option value="nvidia">Nvidia NIM</option>
+                    <option value="custom">Endpoint Custom (compatibile OpenAI)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="setting-row" v-if="aiStore.provider === 'custom'">
+                <div class="setting-info">
+                  <span class="setting-label">URL Endpoint Personalizzato</span>
+                  <span class="setting-desc">Indirizzo base dell'API (es. http://localhost:11434/v1).</span>
+                </div>
+                <div class="setting-control suffix-input-box">
+                  <input
+                    v-model="aiStore.customUrl"
+                    class="input elegant-input"
+                    placeholder="https://api.openai.com/v1"
+                  />
+                </div>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">API Key</span>
+                  <span class="setting-desc">Inserisci la tua chiave API segreta (salvata in sicurezza).</span>
+                </div>
+                <div class="setting-control suffix-input-box api-key-control" style="position: relative; display: flex; gap: 8px;">
+                  <input
+                    v-model="aiStore.apiKey"
+                    :type="showApiKey ? 'text' : 'password'"
+                    class="input elegant-input"
+                    placeholder="Inserisci la chiave API (es. sk-...)"
+                    style="flex: 1; min-width: 220px;"
+                  />
+                  <button class="btn btn-secondary eye-btn" @click="showApiKey = !showApiKey" type="button" :title="showApiKey ? 'Nascondi chiave' : 'Mostra chiave'" style="padding: 0 10px; display: flex; align-items: center; justify-content: center;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Modello di Riferimento</span>
+                  <span class="setting-desc">Seleziona il modello LLM da utilizzare per l'analisi.</span>
+                </div>
+                <div class="setting-control" style="display: flex; flex-direction: column; gap: 6px;">
+                  <select v-model="selectedModelOption" class="input elegant-select" @change="handleModelOptionChange">
+                    <!-- Opzioni OpenRouter -->
+                    <template v-if="aiStore.provider === 'openrouter'">
+                      <option value="google/gemini-2.5-flash:free">Google Gemini 2.5 Flash (Free) - Consigliato</option>
+                      <option value="google/gemini-2.5-flash">Google Gemini 2.5 Flash</option>
+                      <option value="meta-llama/llama-3.3-70b-instruct:free">Meta Llama 3.3 70B Instruct (Free) - Smart</option>
+                      <option value="qwen/qwen-2.5-72b-instruct:free">Qwen 2.5 72B Instruct (Free) - Molto Smart</option>
+                      <option value="meta-llama/llama-3.2-3b-instruct:free">Meta Llama 3.2 3B Instruct (Free) - Ultra-veloce</option>
+                    </template>
+                    
+                    <!-- Opzioni Groq -->
+                    <template v-else-if="aiStore.provider === 'groq'">
+                      <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile - Consigliato/Smart</option>
+                      <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant - Ultra-veloce</option>
+                      <option value="gemma2-9b-it">Gemma 2 9B</option>
+                    </template>
+
+                    <!-- Opzioni Nvidia -->
+                    <template v-else-if="aiStore.provider === 'nvidia'">
+                      <option value="nvidia/llama-3.1-nemotron-70b-instruct">Nvidia Llama 3.1 Nemotron 70B - Consigliato</option>
+                    </template>
+
+                    <option value="custom">Altro / Modello Personalizzato...</option>
+                  </select>
+                  <input
+                    v-if="selectedModelOption === 'custom'"
+                    v-model="customModelName"
+                    class="input elegant-input"
+                    placeholder="Inserisci l'ID del modello (es. openai/gpt-4o)..."
+                    @input="handleCustomModelInput"
+                    style="margin-top: 4px;"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Regole di Business per i Corrieri -->
+          <div class="settings-card">
+            <div class="card-header">
+              <h3 class="card-title">Regole di Business per i Corrieri</h3>
+              <p class="card-subtitle">Descrivi in linguaggio naturale le regole che l'AI deve seguire per abbinare i corrieri agli ordini.</p>
+            </div>
+
+            <div class="settings-form-grid">
+              <div class="setting-row" style="align-items: flex-start; flex-direction: column; gap: 12px;">
+                <div class="setting-info" style="max-width: 100%;">
+                  <span class="setting-label">Istruzioni di Assegnazione</span>
+                  <span class="setting-desc">L'intelligenza artificiale leggerà queste regole riga per riga per decidere quale corriere assegnare ad ogni specifico ordine.</span>
+                </div>
+                <div class="setting-control" style="width: 100%;">
+                  <textarea
+                    v-model="aiStore.courierRules"
+                    class="input elegant-textarea"
+                    rows="6"
+                    style="width: 100%; min-height: 120px; font-family: inherit; font-size: 13px; padding: 10px 14px; resize: vertical;"
+                    placeholder="es. Assegna GLS a chi ordina accessori piccoli o risiede in Sardegna o Sicilia. Assegna BRT per climatizzatori o prodotti pesanti..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Box informativo con esempi pratici -->
+              <div class="example-rules-box">
+                <div class="example-title">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
+                  Esempi di regole efficaci in linguaggio naturale:
+                </div>
+                <ul class="example-list">
+                  <li><strong>Geografia:</strong> <code>"Se la destinazione è in Sicilia, Sardegna o isole minori, assegna GLS."</code></li>
+                  <li><strong>Peso/Dimensione:</strong> <code>"Se il prodotto pesa più di 40 kg o contiene 'climatizzatore', assegna BRT."</code></li>
+                  <li><strong>Valore articolo:</strong> <code>"Per prodotti di valore elevato come smartphone o notebook, assegna DHL Express."</code></li>
+                  <li><strong>Scelta di Fallback:</strong> <code>"In tutti gli altri casi generici, assegna il corriere predefinito GLS."</code></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Pannello Avanzato & System Prompt -->
+          <div class="settings-card">
+            <div class="card-header" @click="showAdvancedSettings = !showAdvancedSettings" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+                  <svg :style="{ transform: showAdvancedSettings ? 'rotate(90deg)' : 'rotate(0)' }" style="transition: transform 0.2s ease;" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                  Pannello Avanzato & System Prompt
+                </h3>
+                <p class="card-subtitle">Regola la temperatura, il parallelismo e personalizza le istruzioni di sistema dell'AI.</p>
+              </div>
+              <span class="advanced-toggle-badge" :class="{ active: showAdvancedSettings }">
+                {{ showAdvancedSettings ? 'Nascondi ✕' : 'Mostra ⚙️' }}
+              </span>
+            </div>
+
+            <div v-show="showAdvancedSettings" class="settings-form-grid animate-fade-in" style="margin-top: 16px;">
+              <!-- Temperatura -->
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    Temperatura (Determinismo)
+                    <span :class="['badge-dinamico', temperatureBadge.class]">{{ temperatureBadge.label }}</span>
+                  </span>
+                  <span class="setting-desc">Valori bassi producono risposte costanti e precise (consigliato: 0.1).</span>
+                </div>
+                <div class="setting-control slider-control-wrapper">
+                  <input
+                    v-model.number="aiStore.temperature"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    class="range-slider"
+                  />
+                  <code class="slider-value-preview">{{ aiStore.temperature.toFixed(2) }}</code>
+                </div>
+              </div>
+
+              <!-- Max Tokens -->
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Max Tokens</span>
+                  <span class="setting-desc">Limite massimo di token per singola risposta del modello.</span>
+                </div>
+                <div class="setting-control slider-control-wrapper">
+                  <input
+                    v-model.number="aiStore.maxTokens"
+                    type="range"
+                    min="100"
+                    max="4000"
+                    step="50"
+                    class="range-slider"
+                  />
+                  <code class="slider-value-preview">{{ aiStore.maxTokens }}</code>
+                </div>
+              </div>
+
+              <!-- Frequency Penalty -->
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Frequency Penalty</span>
+                  <span class="setting-desc">Penalizza la ripetizione di parole identiche (da -2.0 a 2.0).</span>
+                </div>
+                <div class="setting-control slider-control-wrapper">
+                  <input
+                    v-model.number="aiStore.frequencyPenalty"
+                    type="range"
+                    min="-2"
+                    max="2"
+                    step="0.1"
+                    class="range-slider"
+                  />
+                  <code class="slider-value-preview">{{ aiStore.frequencyPenalty.toFixed(1) }}</code>
+                </div>
+              </div>
+
+              <!-- Presence Penalty -->
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Presence Penalty</span>
+                  <span class="setting-desc">Incoraggia il modello ad ampliare gli argomenti trattati (da -2.0 a 2.0).</span>
+                </div>
+                <div class="setting-control slider-control-wrapper">
+                  <input
+                    v-model.number="aiStore.presencePenalty"
+                    type="range"
+                    min="-2"
+                    max="2"
+                    step="0.1"
+                    class="range-slider"
+                  />
+                  <code class="slider-value-preview">{{ aiStore.presencePenalty.toFixed(1) }}</code>
+                </div>
+              </div>
+
+              <!-- Concorrenza Richieste -->
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    Concorrenza Richieste (Parallelismo)
+                    <span :class="['badge-dinamico', concurrencyBadge.class]">{{ concurrencyBadge.label }}</span>
+                  </span>
+                  <span class="setting-desc">Numero massimo di batch elaborati simultaneamente sul server.</span>
+                </div>
+                <div class="setting-control slider-control-wrapper">
+                  <input
+                    v-model.number="aiStore.concurrency"
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    class="range-slider"
+                  />
+                  <code class="slider-value-preview">{{ aiStore.concurrency }}</code>
+                </div>
+              </div>
+
+              <hr class="settings-divider" />
+
+              <!-- Preset System Prompt -->
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Preset System Prompt</span>
+                  <span class="setting-desc">Seleziona un modello di prompt di partenza da personalizzare.</span>
+                </div>
+                <div class="setting-control">
+                  <select v-model="selectedPromptPreset" class="input elegant-select" @change="applyPromptPreset">
+                    <option value="custom">Personalizzato</option>
+                    <option value="completo">Completo (Rinominazione, Corrieri, Anomalie)</option>
+                    <option value="rename">Solo Rinominazione Prodotto</option>
+                    <option value="courier">Solo Assegnazione Corrieri</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Alert Box Sicurezza System Prompt -->
+              <div class="warning-alert">
+                <div class="alert-title">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                  Pericolo - Riservato a Utenti Esperti
+                </div>
+                <div class="alert-desc">
+                  La modifica del System Prompt richiede di mantenere intatta la struttura dell'output JSON. Rimuovere o cambiare le chiavi attese (<code>index</code>, <code>suggestedName</code>, <code>suggestedCourier</code>, <code>courierReason</code>, <code>anomalies</code>) <strong>causerà il blocco completo dell'analizzatore AI</strong> all'interno dell'editor.
+                </div>
+              </div>
+
+              <!-- System Prompt Textarea -->
+              <div class="setting-row" style="align-items: flex-start; flex-direction: column; gap: 12px;">
+                <div class="setting-info" style="max-width: 100%;">
+                  <span class="setting-label">System Prompt</span>
+                  <span class="setting-desc">Le istruzioni strutturate a basso livello inviate al LLM ad ogni chiamata.</span>
+                </div>
+                <div class="setting-control" style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                  <textarea
+                    v-model="aiStore.systemPrompt"
+                    class="input elegant-textarea font-mono"
+                    rows="8"
+                    @input="selectedPromptPreset = 'custom'"
+                    style="width: 100%; min-height: 160px; font-family: monospace; font-size: 11px; padding: 10px 14px; resize: vertical;"
+                  ></textarea>
+                  <button class="btn btn-secondary btn-sm" @click="resetSystemPromptToDefault" type="button" style="align-self: flex-start;">
+                    Ripristina Prompt di Default
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Azioni della pagina -->
+          <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; width: 100%;">
+            <button class="btn btn-secondary btn-with-icon" @click="testAiConnection" :disabled="testingConnection" type="button">
+              <span v-if="testingConnection" class="spinner" style="margin-right: 8px;"></span>
+              <svg v-else viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+              {{ testingConnection ? 'Test in corso...' : 'Testa Connessione' }}
+            </button>
+            <button class="btn btn-primary btn-with-icon" @click="saveAiSettings" :disabled="aiStore.isConfigSaving" type="button">
+              <span v-if="aiStore.isConfigSaving" class="spinner" style="margin-right: 8px;"></span>
+              <svg v-else viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              Salva Configurazione AI
+            </button>
+          </div>
+
+          <!-- Card 4: Cronologia Chiamate AI -->
+          <div class="settings-card" style="margin-top: 24px;">
+            <div class="ai-logs-section">
+              <div class="logs-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h4 style="margin: 0; font-size: 14px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                  </svg>
+                  Cronologia Chiamate AI (Ultime 10)
+                </h4>
+                <button class="btn btn-secondary btn-xs btn-with-icon" @click="refreshLogs" type="button">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  Aggiorna
+                </button>
+              </div>
+
+              <div v-if="aiStore.logs.length === 0" class="empty-logs-state">
+                Nessuna chiamata registrata in questa sessione.
+              </div>
+
+              <div v-else class="logs-list" style="display: flex; flex-direction: column; gap: 8px;">
+                <div v-for="(log, idx) in aiStore.logs" :key="idx" class="log-item" style="border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-secondary); overflow: hidden; font-size: 12px;">
+                  <div class="log-summary" @click="toggleLogExpand(idx)" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; cursor: pointer; user-select: none;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                      <span :class="['status-badge', log.error ? 'badge-error' : 'badge-success']" style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase;">
+                        {{ log.error ? 'Error' : 'OK' }}
+                      </span>
+                      <strong style="color: var(--text-primary);">{{ log.model }}</strong>
+                      <span style="color: var(--text-muted); font-size: 11px;">({{ log.provider }})</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 11px;">
+                      <span>{{ formatTime(log.timestamp) }}</span>
+                      <span style="font-weight: 500; color: var(--accent);">{{ log.latency }} ms</span>
+                      <svg :style="{ transform: expandedLogIndex === idx ? 'rotate(90deg)' : 'rotate(0)' }" style="transition: transform 0.2s ease;" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 6 15 12 9 18"></polyline>
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div v-if="expandedLogIndex === idx" class="log-details animate-fade-in" style="padding: 14px; border-top: 1px solid var(--border); background: var(--bg-card); display: flex; flex-direction: column; gap: 10px;">
+                    <div v-if="log.error" style="color: var(--danger); background: var(--danger-light); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(239,68,68,0.2); font-weight: 500;">
+                      <strong>Errore API:</strong> {{ log.error }}
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      <span style="font-weight: 600; color: var(--text-secondary);">Messaggi Inviati (Input):</span>
+                      <pre style="margin: 0; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow-x: auto; font-family: monospace; font-size: 11px; max-height: 150px; white-space: pre-wrap; word-break: break-all;">{{ JSON.stringify(log.messages, null, 2) }}</pre>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      <span style="font-weight: 600; color: var(--text-secondary);">Risposta Ricevuta (Output):</span>
+                      <pre style="margin: 0; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow-x: auto; font-family: monospace; font-size: 11px; max-height: 150px; white-space: pre-wrap; word-break: break-all;">{{ log.response || 'nessuna risposta o errore' }}</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import api from '../api/index.js'
 import { useCourierPresetStore } from '../stores/courierPresets.js'
 import { useSpreadsheetStore } from '../stores/spreadsheet.js'
 import { useNotificationStore } from '../stores/notification.js'
+import { useAiStore } from '../stores/ai.js'
 
 const notificationStore = useNotificationStore()
 const courierPresetStore = useCourierPresetStore()
 const spreadsheetStore = useSpreadsheetStore()
+const aiStore = useAiStore()
 
 const activeTab = ref('general')
+
+const temperatureBadge = computed(() => {
+  const t = aiStore.temperature ?? 0.1
+  if (t <= 0.25) {
+    return { label: 'Preciso 🎯', class: 'badge-info' }
+  } else if (t <= 0.70) {
+    return { label: 'Equilibrato ⚖️', class: 'badge-success' }
+  } else {
+    return { label: 'Creativo 🎨', class: 'badge-warning' }
+  }
+})
+
+const concurrencyBadge = computed(() => {
+  const c = aiStore.concurrency ?? 3
+  if (c <= 1) {
+    return { label: 'Sicuro 🐢', class: 'badge-info' }
+  } else if (c <= 3) {
+    return { label: 'Ottimale 🚀', class: 'badge-success' }
+  } else {
+    return { label: 'Aggressivo ⚡', class: 'badge-danger' }
+  }
+})
+
+const testingConnection = ref(false)
+const showApiKey = ref(false)
+const showAdvancedSettings = ref(false)
+const selectedModelOption = ref('google/gemini-2.5-flash')
+const customModelName = ref('')
+const selectedPromptPreset = ref('custom')
+const expandedLogIndex = ref(-1)
+
+const RENAME_ONLY_PROMPT = `Sei un assistente AI integrato in OrderEdit, un'applicazione gestionale per l'editing di ordini Excel.
+Il tuo compito è analizzare un elenco di ordini in formato JSON e per ciascuno:
+1. Se "isTemplateMissing" è true, genera un "suggestedName" pulito ed elegante per il catalogo partendo da "originalName".
+   - Identifica la marca e il modello nel testo del prodotto originale e racchiudili con il tag HTML <b>...</b> (es. "<b>Daikin ATXC35D</b> Climatizzatore monosplit 12000Btu").
+   - Mantieni un tono professionale e pulito, rimuovi le abbreviazioni disordinate o caratteri spuri.
+   - Se "isTemplateMissing" è false, mantieni lo stesso esatto valore indicato in "resolvedName".
+2. NON toccare il corriere né rilevare anomalie. Restituisci "" in "suggestedCourier", "" in "courierReason" e un array vuoto [] in "anomalies".
+
+Rispondi ESCLUSIVAMENTE con un array JSON valido, rispettando questa struttura esatta, senza spiegazioni testuali fuori dal JSON:
+[
+  {
+    "index": number,
+    "suggestedName": "string",
+    "suggestedCourier": "",
+    "courierReason": "",
+    "anomalies": []
+  },
+  ...
+]`
+
+const COURIER_ONLY_PROMPT = `Sei un assistente AI integrato in OrderEdit, un'applicazione gestionale per l'editing di ordini Excel.
+Il tuo compito è analizzare un elenco di ordini in formato JSON e per ciascuno:
+1. Assegna il corriere migliore ("suggestedCourier") scegliendolo RIGOROSAMENTE tra i corrieri ammessi.
+   - Basati su queste regole fornite dall'utente:
+     <RULES>
+     [COURIER_RULES]
+     </RULES>
+   - Se nessuna regola si applica chiaramente, seleziona il corriere più opportuno.
+   - Fornisci una breve spiegazione tecnica in italiano per la tua scelta in "courierReason".
+2. Mantieni lo stesso nome originale in "suggestedName" (cioè "resolvedName" se presente, altrimenti "originalName"). Non rilevare anomalie (lascia "anomalies" vuoto []).
+
+Rispondi ESCLUSIVAMENTE con un array JSON valido, rispettando questa struttura esatta, senza spiegazioni testuali fuori dal JSON:
+[
+  {
+    "index": number,
+    "suggestedName": "string",
+    "suggestedCourier": "string",
+    "courierReason": "string",
+    "anomalies": []
+  },
+  ...
+]`
+
+const DEFAULT_SYSTEM_PROMPT = `Sei un assistente AI integrato in OrderEdit, un'applicazione gestionale per l'editing di ordini Excel.
+Il tuo compito è analizzare un elenco di ordini in formato JSON e per ciascuno:
+1. Se "isTemplateMissing" è true, genera un "suggestedName" pulito ed elegante per il catalogo partendo da "originalName".
+   - Identifica la marca e il modello nel testo del prodotto originale e racchiudili con il tag HTML <b>...</b> (es. "<b>Daikin ATXC35D</b> Climatizzatore monosplit 12000Btu").
+   - Mantieni un tono professionale e pulito, rimuovi le abbreviazioni disordinate o caratteri spuri.
+   - Se "isTemplateMissing" è false, mantieni lo stesso esatto valore indicato in "resolvedName".
+2. Assegna il corriere migliore ("suggestedCourier") scegliendolo RIGOROSAMENTE tra i corrieri ammessi.
+   - Basati su queste regole fornite dall'utente:
+     <RULES>
+     [COURIER_RULES]
+     </RULES>
+   - Se nessuna regola si applica chiaramente, seleziona il corriere più opportuno.
+   - Fornisci una breve spiegazione tecnica in italiano per la tua scelta in "courierReason".
+3. Rileva eventuali anomalie o avvertimenti nel campo "anomalies" (un array di stringhe):
+   - Ad esempio: se il CAP ha un formato non valido, se mancano dati critici come la città di destinazione, o se ci sono indicazioni strane. Se non ci sono anomalie, lascia l'array vuoto.
+
+Rispondi ESCLUSIVAMENTE con un array JSON valido, rispettando questa struttura esatta, senza spiegazioni testuali fuori dal JSON:
+[
+  {
+    "index": number,
+    "suggestedName": "string",
+    "suggestedCourier": "string",
+    "courierReason": "string",
+    "anomalies": ["string", ...]
+  },
+  ...
+]`
+
+function resetSystemPromptToDefault() {
+  aiStore.systemPrompt = DEFAULT_SYSTEM_PROMPT
+  selectedPromptPreset.value = 'completo'
+  notificationStore.show({ type: 'info', message: 'System Prompt ripristinato al default. Salva per confermare.' })
+}
+
+function applyPromptPreset() {
+  if (selectedPromptPreset.value === 'completo') {
+    aiStore.systemPrompt = DEFAULT_SYSTEM_PROMPT
+  } else if (selectedPromptPreset.value === 'rename') {
+    aiStore.systemPrompt = RENAME_ONLY_PROMPT
+  } else if (selectedPromptPreset.value === 'courier') {
+    aiStore.systemPrompt = COURIER_ONLY_PROMPT
+  }
+}
+
+function toggleLogExpand(index) {
+  if (expandedLogIndex.value === index) {
+    expandedLogIndex.value = -1
+  } else {
+    expandedLogIndex.value = index
+  }
+}
+
+function formatTime(isoString) {
+  if (!isoString) return ''
+  try {
+    const d = new Date(isoString)
+    return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  } catch {
+    return isoString
+  }
+}
+
+async function refreshLogs() {
+  await aiStore.fetchLogs()
+}
+
+function handleModelOptionChange() {
+  if (selectedModelOption.value !== 'custom') {
+    aiStore.model = selectedModelOption.value
+  } else {
+    aiStore.model = customModelName.value || (aiStore.provider === 'groq' ? 'llama-3.3-70b-versatile' : 'google/gemini-2.5-flash:free')
+  }
+}
+
+function handleProviderChange() {
+  if (aiStore.provider === 'openrouter') {
+    aiStore.model = 'google/gemini-2.5-flash:free'
+    selectedModelOption.value = 'google/gemini-2.5-flash:free'
+  } else if (aiStore.provider === 'groq') {
+    aiStore.model = 'llama-3.3-70b-versatile'
+    selectedModelOption.value = 'llama-3.3-70b-versatile'
+  } else if (aiStore.provider === 'nvidia') {
+    aiStore.model = 'nvidia/llama-3.1-nemotron-70b-instruct'
+    selectedModelOption.value = 'nvidia/llama-3.1-nemotron-70b-instruct'
+  } else {
+    aiStore.model = ''
+    selectedModelOption.value = 'custom'
+    customModelName.value = ''
+  }
+}
+
+function handleCustomModelInput() {
+  aiStore.model = customModelName.value
+}
+
+async function saveAiSettings() {
+  try {
+    await aiStore.save()
+    notificationStore.show({ type: 'success', message: 'Configurazione AI salvata con successo sul server!' })
+  } catch (err) {
+    notificationStore.show({ type: 'error', message: `Salvataggio fallito: ${err.message}` })
+  }
+}
+
+async function toggleAiEnabled() {
+  try {
+    await aiStore.save()
+    notificationStore.show({
+      type: 'success',
+      message: aiStore.enabled ? 'Integrazione AI abilitata con successo!' : 'Integrazione AI disattivata!'
+    })
+  } catch (err) {
+    notificationStore.show({ type: 'error', message: `Errore salvataggio stato AI: ${err.message}` })
+  }
+}
+
+async function testAiConnection() {
+  testingConnection.value = true
+  try {
+    const res = await api.post('/api/ai/test', {
+      provider: aiStore.provider,
+      apiKey: aiStore.apiKey,
+      model: aiStore.model,
+      customUrl: aiStore.customUrl,
+    })
+    if (res.data && res.data.status === 'ok') {
+      notificationStore.show({ type: 'success', message: 'Connessione AI riuscita con successo!' })
+    } else {
+      notificationStore.show({ type: 'error', message: `Errore: ${res.data?.error || 'Risposta inattesa'}` })
+    }
+  } catch (err) {
+    notificationStore.show({ type: 'error', message: `Connessione fallita: ${err.response?.data?.error || err.message}` })
+  } finally {
+    testingConnection.value = false
+  }
+}
 
 const newCourierPreset = ref('')
 const editingCourierIndex = ref(-1)
@@ -738,6 +1395,41 @@ onMounted(() => {
   } catch {
     themeMode.value = 'light'
   }
+  aiStore.load().then(async () => {
+    const predefined = [
+      'google/gemini-2.5-flash:free',
+      'google/gemini-2.5-flash',
+      'meta-llama/llama-3.3-70b-instruct:free',
+      'qwen/qwen-2.5-72b-instruct:free',
+      'meta-llama/llama-3.2-3b-instruct:free',
+      'llama-3.3-70b-versatile',
+      'llama-3.1-8b-instant',
+      'gemma2-9b-it',
+      'nvidia/llama-3.1-nemotron-70b-instruct'
+    ]
+    if (predefined.includes(aiStore.model)) {
+      selectedModelOption.value = aiStore.model
+    } else {
+      selectedModelOption.value = 'custom'
+      customModelName.value = aiStore.model
+    }
+
+    // Match preset system prompt
+    const cleanPrompt = (str) => (str || '').replace(/\r\n/g, '\n').trim()
+    const currentPrompt = cleanPrompt(aiStore.systemPrompt)
+    
+    if (currentPrompt === cleanPrompt(DEFAULT_SYSTEM_PROMPT)) {
+      selectedPromptPreset.value = 'completo'
+    } else if (currentPrompt === cleanPrompt(RENAME_ONLY_PROMPT)) {
+      selectedPromptPreset.value = 'rename'
+    } else if (currentPrompt === cleanPrompt(COURIER_ONLY_PROMPT)) {
+      selectedPromptPreset.value = 'courier'
+    } else {
+      selectedPromptPreset.value = 'custom'
+    }
+
+    await aiStore.fetchLogs()
+  })
   loadBackupStats()
 })
 
@@ -1146,42 +1838,61 @@ async function deleteBackups() {
   height: 100%;
   background: var(--bg-primary);
   overflow: hidden;
+  position: relative;
+}
+
+/* Background ambient glow effect */
+.settings-page::before {
+  content: '';
+  position: absolute;
+  top: -10%;
+  right: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(92, 141, 246, 0.08) 0%, rgba(92, 141, 246, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Sidebar Styling */
 .settings-sidebar {
-  width: 280px;
+  width: 290px;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  padding: 24px;
+  padding: 28px 24px;
   flex-shrink: 0;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  position: relative;
 }
 
 .sidebar-header {
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 }
 
 .sidebar-title {
-  font-size: 19px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   color: var(--text-primary);
-  margin-bottom: 6px;
-  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .sidebar-subtitle {
   font-size: 12px;
   color: var(--text-muted);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .sidebar-tab-btn {
@@ -1193,94 +1904,160 @@ async function deleteBackups() {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.35s cubic-bezier(0.32, 0.72, 0, 1);
   user-select: none;
   outline: none;
   position: relative;
+  overflow: hidden;
 }
 
-.sidebar-tab-btn:hover {
-  background: var(--bg-hover);
+/* Inactive button hover style with smooth color changes and micro-translation */
+.sidebar-tab-btn:not(.active):hover {
+  background: rgba(92, 141, 246, 0.05);
   color: var(--text-hover);
-  transform: translateX(3px) translateY(-0.5px);
+  border-color: rgba(92, 141, 246, 0.1);
+  transform: translateX(4px);
+}
+
+:root[data-theme='light'] .sidebar-tab-btn:not(.active):hover {
+  background: rgba(55, 104, 214, 0.05);
+  color: var(--text-hover);
+  border-color: rgba(55, 104, 214, 0.1);
 }
 
 .sidebar-tab-btn:active {
-  transform: scale(0.97) translateX(1px);
+  transform: scale(0.97) translateX(2px);
   transition-duration: 0.08s;
 }
 
+/* Active button style - glassy gradient */
 .sidebar-tab-btn.active {
-  background: var(--accent-light);
+  background: linear-gradient(135deg, rgba(92, 141, 246, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%);
   color: var(--accent);
-  border-color: rgba(92, 141, 246, 0.18);
+  border-color: rgba(92, 141, 246, 0.2);
   font-weight: 600;
+  box-shadow: 0 4px 15px rgba(92, 141, 246, 0.05);
 }
 
+:root[data-theme='light'] .sidebar-tab-btn.active {
+  background: linear-gradient(135deg, rgba(55, 104, 214, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%);
+  border-color: rgba(55, 104, 214, 0.25);
+  box-shadow: 0 4px 15px rgba(55, 104, 214, 0.05);
+}
+
+/* Active button hover - richer gradient, increased border accentuation, more translation */
+.sidebar-tab-btn.active:hover {
+  background: linear-gradient(135deg, rgba(92, 141, 246, 0.18) 0%, rgba(139, 92, 246, 0.12) 100%);
+  border-color: rgba(92, 141, 246, 0.35);
+  box-shadow: 0 6px 20px rgba(92, 141, 246, 0.1);
+  transform: translateX(6px);
+}
+
+:root[data-theme='light'] .sidebar-tab-btn.active:hover {
+  background: linear-gradient(135deg, rgba(55, 104, 214, 0.18) 0%, rgba(139, 92, 246, 0.12) 100%);
+  border-color: rgba(55, 104, 214, 0.35);
+  box-shadow: 0 6px 20px rgba(55, 104, 214, 0.1);
+}
+
+/* Active indicator vertical expansion micro-interaction */
 .sidebar-tab-btn.active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 8px;
-  bottom: 8px;
+  top: 10px;
+  bottom: 10px;
   width: 4px;
-  background: var(--accent);
+  background: linear-gradient(to bottom, var(--accent), #8b5cf6);
   border-radius: 0 4px 4px 0;
-  transition: all var(--transition);
+  box-shadow: 0 0 8px var(--accent);
+  transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sidebar-tab-btn.active:hover::before {
+  top: 6px;
+  bottom: 6px;
+  box-shadow: 0 0 12px var(--accent);
 }
 
 .tab-icon {
   flex-shrink: 0;
-  transition: transform var(--transition);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), color 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  color: var(--text-muted);
 }
 
-.sidebar-tab-btn:hover .tab-icon {
-  transform: scale(1.08);
+.sidebar-tab-btn.active .tab-icon {
+  color: var(--accent);
+  transform: scale(1.1);
+}
+
+.sidebar-tab-btn.active:hover .tab-icon {
+  transform: scale(1.18);
+}
+
+.sidebar-tab-btn:not(.active):hover .tab-icon {
+  transform: scale(1.15);
+  color: var(--text-primary);
 }
 
 /* Content Area */
 .settings-content {
   flex-grow: 1;
-  padding: 32px 40px;
+  padding: 40px 48px;
   overflow-y: auto;
   background: var(--bg-primary);
+  z-index: 5;
 }
 
 .settings-card-wrapper {
-  max-width: 820px;
+  max-width: 860px;
   margin: 0 auto;
 }
 
+/* Glassmorphism Card Style */
 .settings-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background: rgba(27, 32, 48, 0.45);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-lg);
-  padding: 28px;
-  box-shadow: var(--shadow-sm);
+  padding: 32px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+:root[data-theme='light'] .settings-card {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 12px 30px rgba(17, 24, 39, 0.05),
+              inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .card-header {
   border-bottom: 1px solid var(--border);
-  padding-bottom: 18px;
+  padding-bottom: 20px;
+  position: relative;
 }
 
 .card-title {
-  font-size: 18px;
-  font-weight: 650;
+  font-size: 20px;
+  font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 6px;
-  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
 }
 
 .card-subtitle {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
   line-height: 1.5;
 }
@@ -1289,35 +2066,44 @@ async function deleteBackups() {
 .settings-form-grid {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .setting-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 24px;
-  padding: 8px 0;
+  gap: 32px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+:root[data-theme='light'] .setting-row {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+}
+
+.setting-row:last-of-type {
+  border-bottom: none;
 }
 
 .setting-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   flex-grow: 1;
   max-width: 520px;
 }
 
 .setting-label {
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .setting-desc {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-muted);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .setting-control {
@@ -1326,33 +2112,34 @@ async function deleteBackups() {
 
 /* Custom Styled Select */
 .elegant-select {
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
+  padding: 9px 14px;
+  border-radius: var(--radius-md);
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   color: var(--text-primary);
   font-size: 13px;
-  min-width: 180px;
+  min-width: 200px;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .elegant-select:hover {
-  border-color: var(--accent);
+  border-color: rgba(92, 141, 246, 0.4);
 }
 
 .elegant-select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-light);
-  outline: none;
+  box-shadow: 0 0 0 3px rgba(92, 141, 246, 0.15);
 }
 
 /* Toggle Switch Styling */
 .switch {
   position: relative;
   display: inline-block;
-  width: 44px;
-  height: 24px;
+  width: 48px;
+  height: 26px;
 }
 
 .switch input {
@@ -1368,39 +2155,47 @@ async function deleteBackups() {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--bg-secondary);
+  background-color: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  border-radius: 24px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border-radius: 26px;
 }
+
+:root[data-theme='light'] .slider {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
 .slider:before {
   position: absolute;
   content: "";
-  height: 16px;
-  width: 16px;
+  height: 18px;
+  width: 18px;
   left: 3px;
   bottom: 3px;
   background-color: var(--text-secondary);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.3s cubic-bezier(0.25, 1.25, 0.5, 1);
   border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
+
 .switch:hover .slider:before {
-  transform: scale(1.1);
+  transform: scale(1.08);
 }
-input:checked + .slider {
-  background-color: var(--accent);
-  border-color: var(--accent);
+
+input:checked + .slider, :root[data-theme='light'] input:checked + .slider {
+  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+  border-color: transparent;
+  box-shadow: 0 0 12px rgba(92, 141, 246, 0.25);
 }
+
 input:checked + .slider:before {
-  transform: translateX(20px);
+  transform: translateX(22px);
   background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(92, 141, 246, 0.2);
 }
+
 .switch:hover input:checked + .slider:before {
-  transform: translateX(20px) scale(1.1);
-}
-input:focus + .slider {
-  box-shadow: 0 0 1px var(--accent);
+  transform: translateX(22px) scale(1.08);
 }
 
 /* Theme Visual Cards Selection */
@@ -1409,74 +2204,98 @@ input:focus + .slider {
   gap: 16px;
   flex-wrap: wrap;
 }
+
 .theme-card-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  background: var(--bg-card);
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.02);
   border: 2px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px;
+  border-radius: var(--radius-lg);
+  padding: 16px;
   cursor: pointer;
-  width: 130px;
-  transition: all var(--transition);
+  width: 140px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   outline: none;
   font-family: inherit;
+  position: relative;
+  overflow: hidden;
 }
+
 .theme-card-btn:hover {
-  border-color: var(--text-muted);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.03);
 }
+
+:root[data-theme='light'] .theme-card-btn:hover {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.01);
+  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.05);
+}
+
 .theme-card-btn.active {
   border-color: var(--accent);
-  background: var(--bg-secondary);
-  box-shadow: 0 0 0 1px var(--accent);
+  background: rgba(92, 141, 246, 0.04);
+  box-shadow: 0 0 16px rgba(92, 141, 246, 0.15);
 }
+
 .theme-preview-box {
   width: 100px;
   height: 60px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  padding: 8px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: all var(--transition);
+  transition: all 0.3s ease;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+
 .light-preview {
-  background: #ffffff;
+  background: #f8fafc;
+  border-color: #e2e8f0;
 }
+
 .dark-preview {
   background: #1e293b;
   border-color: #334155;
 }
+
 .preview-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--accent);
 }
+
 .dark-preview .preview-dot {
   background: #38bdf8;
 }
+
 .preview-line {
   height: 5px;
   border-radius: 2px;
   width: 100%;
 }
+
 .light-preview .preview-line {
   background: #e2e8f0;
 }
+
 .dark-preview .preview-line {
   background: #334155;
 }
+
 .preview-line.short {
   width: 60%;
 }
+
 .theme-label-text {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -1485,7 +2304,7 @@ input:focus + .slider {
 .couriers-manager {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .add-preset-box {
@@ -1496,135 +2315,212 @@ input:focus + .slider {
 
 .elegant-input {
   flex-grow: 1;
-  padding: 10px 14px;
-  background: var(--bg-secondary);
+  padding: 11px 16px;
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   color: var(--text-primary);
   font-size: 13px;
-  transition: all var(--transition);
+  transition: all 0.3s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme='light'] .elegant-input {
+  background: #ffffff;
+  box-shadow: inset 0 1px 2px rgba(17, 24, 39, 0.02);
 }
 
 .elegant-input:hover {
-  border-color: var(--accent);
+  border-color: rgba(92, 141, 246, 0.4);
 }
 
 .elegant-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-light);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 0 0 3px rgba(92, 141, 246, 0.15);
   outline: none;
+}
+
+:root[data-theme='light'] .elegant-input:focus {
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(55, 104, 214, 0.15);
+}
+
+.elegant-textarea {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme='light'] .elegant-textarea {
+  background: #ffffff;
+}
+
+.elegant-textarea:hover {
+  border-color: rgba(92, 141, 246, 0.4);
+}
+
+.elegant-textarea:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 0 0 3px rgba(92, 141, 246, 0.15);
+  outline: none;
+}
+
+:root[data-theme='light'] .elegant-textarea:focus {
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(55, 104, 214, 0.15);
 }
 
 .add-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
+  padding: 11px 20px;
   font-size: 13px;
   font-weight: 600;
+  border-radius: var(--radius-md);
 }
 
-.presets-list-container {
+/* Courier Chips Grid Styling */
+.courier-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.015);
+  backdrop-filter: blur(4px);
+  min-height: 120px;
+}
+
+:root[data-theme='light'] .courier-chips-grid {
+  border-color: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.01);
+}
+
+.courier-chip {
+  background: rgba(27, 32, 48, 0.6);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme='light'] .courier-chip {
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.courier-chip:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(92, 141, 246, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+:root[data-theme='light'] .courier-chip:hover {
+  background: #ffffff;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.06);
+}
+
+.courier-chip.editing, :root[data-theme='light'] .courier-chip.editing {
+  border-color: var(--accent);
   background: var(--bg-secondary);
 }
 
-.elegant-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 0;
-  font-size: 13px;
+.chip-display-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.elegant-table th {
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-  font-weight: 650;
-  text-align: left;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-.elegant-table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
+.chip-name {
+  cursor: pointer;
   color: var(--text-primary);
 }
 
-.elegant-table tr:last-child td {
-  border-bottom: none;
-}
-
-.preset-name-tag {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-}
-
-.tag-bullet {
-  width: 6px;
-  height: 6px;
-  background: var(--accent);
-  border-radius: 50%;
-}
-
-.elegant-edit-row {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.compact-input {
-  width: 100%;
-  padding: 6px 10px;
-}
-
-.elegant-action-btns {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.btn-icon-only {
+.chip-icon-btn {
   background: transparent;
   border: none;
-  padding: 6px;
-  border-radius: var(--radius-sm);
   color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+
+.chip-icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.chip-icon-btn.delete:hover {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.chip-edit-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip-edit-input {
+  border: 1px solid var(--accent);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  width: 130px;
+  outline: none;
+}
+
+.btn-chip-action {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  outline: none;
+  transition: all var(--transition);
 }
 
-.btn-icon-only:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-  transform: translateY(-1.5px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+.btn-chip-action.check {
+  color: var(--success);
+  border-color: var(--success);
 }
 
-.btn-icon-only:active {
-  transform: scale(0.92) translateY(0);
-  transition-duration: 0.08s;
+.btn-chip-action.check:hover {
+  background: var(--success-light);
 }
 
-.btn-icon-only.danger:hover {
-  background: var(--danger-light);
+.btn-chip-action.cancel {
   color: var(--danger);
-  transform: translateY(-1.5px);
-  box-shadow: var(--shadow-danger-glow);
+  border-color: var(--danger);
 }
 
-.empty-state-row {
-  padding: 0 !important;
+.btn-chip-action.cancel:hover {
+  background: var(--danger-light);
 }
 
 .empty-presets-state {
@@ -1635,10 +2531,12 @@ input:focus + .slider {
   padding: 40px;
   gap: 12px;
   color: var(--text-muted);
+  width: 100%;
 }
 
 .empty-icon {
   color: var(--border);
+  opacity: 0.7;
 }
 
 /* Suffix & Save Controls */
@@ -1648,21 +2546,21 @@ input:focus + .slider {
   gap: 8px;
 }
 
-.save-suffix-btn {
-  padding: 8px 14px;
-}
-
 .compact-number {
-  max-width: 100px;
+  max-width: 110px;
   text-align: center;
 }
 
 .preview-row {
-  background: var(--bg-secondary);
-  margin: 4px 0;
-  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  margin: 8px 0;
+  padding: 14px 20px;
   border-radius: var(--radius-md);
   border: 1px dashed var(--border);
+}
+
+:root[data-theme='light'] .preview-row {
+  background: rgba(0, 0, 0, 0.015);
 }
 
 .preview-tag {
@@ -1673,7 +2571,7 @@ input:focus + .slider {
   font-family: monospace;
   font-size: 13px;
   background: var(--bg-primary);
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
@@ -1681,24 +2579,25 @@ input:focus + .slider {
 .settings-divider {
   border: none;
   border-top: 1px solid var(--border);
-  margin: 10px 0;
+  margin: 12px 0;
 }
 
 /* Backup Database Section */
 .backup-database-card {
-  margin-top: 14px;
-  background: var(--bg-secondary);
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.015);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .db-stats-box {
   display: flex;
-  gap: 32px;
+  gap: 40px;
 }
 
 .db-stat-item {
@@ -1710,11 +2609,13 @@ input:focus + .slider {
 .db-stat-label {
   font-size: 12px;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .db-stat-value {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 750;
   color: var(--text-primary);
 }
 
@@ -1741,13 +2642,13 @@ input:focus + .slider {
 
 /* Transitions */
 .animate-fade-in {
-  animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeIn 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -1757,7 +2658,7 @@ input:focus + .slider {
 
 /* Backup Section Cards */
 .backup-section-card {
-  background: var(--bg-secondary);
+  background: rgba(255, 255, 255, 0.015);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 24px;
@@ -1765,12 +2666,13 @@ input:focus + .slider {
   justify-content: space-between;
   align-items: center;
   gap: 32px;
-  transition: all var(--transition);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .backup-section-card:hover {
-  border-color: rgba(99, 102, 241, 0.25);
-  box-shadow: var(--shadow-sm);
+  border-color: rgba(92, 141, 246, 0.3);
+  box-shadow: 0 4px 15px rgba(92, 141, 246, 0.05);
+  transform: translateY(-2px);
 }
 
 .section-card-info {
@@ -1782,13 +2684,13 @@ input:focus + .slider {
 }
 
 .section-card-title {
-  font-size: 15px;
+  font-size: 15.5px;
   font-weight: 650;
   color: var(--text-primary);
 }
 
 .section-card-desc {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-muted);
   line-height: 1.5;
 }
@@ -1805,10 +2707,10 @@ input:focus + .slider {
   justify-content: center;
   border: 2px dashed var(--border);
   border-radius: var(--radius-lg);
-  padding: 32px 24px;
-  background: rgba(99, 102, 241, 0.01);
+  padding: 36px 24px;
+  background: rgba(92, 141, 246, 0.01);
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   text-align: center;
   margin-top: 8px;
   user-select: none;
@@ -1816,28 +2718,29 @@ input:focus + .slider {
 
 .drag-drop-zone:hover {
   border-color: var(--accent);
-  background: rgba(99, 102, 241, 0.04);
+  background: rgba(92, 141, 246, 0.04);
+  box-shadow: 0 0 15px rgba(92, 141, 246, 0.05);
 }
 
 .drag-drop-zone.active {
   border-color: var(--accent);
-  background: rgba(99, 102, 241, 0.08);
-  transform: scale(0.99);
+  background: rgba(92, 141, 246, 0.08);
+  transform: scale(0.98);
 }
 
 .upload-cloud-icon {
   color: var(--text-muted);
   margin-bottom: 12px;
-  transition: transform var(--transition), color var(--transition);
+  transition: transform 0.3s ease, color 0.3s ease;
 }
 
 .drag-drop-zone:hover .upload-cloud-icon {
-  transform: translateY(-2px) scale(1.05);
+  transform: translateY(-4px) scale(1.1);
   color: var(--accent);
 }
 
 .upload-label {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text-primary);
   font-weight: 550;
   margin-bottom: 4px;
@@ -1850,19 +2753,19 @@ input:focus + .slider {
 }
 
 .upload-sub {
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--text-muted);
 }
 
 /* Danger Card */
 .danger-card {
-  border-color: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.25);
   background: rgba(239, 68, 68, 0.01);
 }
 
 .danger-card:hover {
-  border-color: rgba(239, 68, 68, 0.4);
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.08);
 }
 
 .text-danger {
@@ -1884,122 +2787,24 @@ input:focus + .slider {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid var(--border);
-    padding: 16px;
+    padding: 20px 16px;
   }
   .sidebar-nav {
     flex-direction: row;
     overflow-x: auto;
-    padding-bottom: 4px;
+    padding-bottom: 8px;
+    gap: 8px;
   }
   .sidebar-tab-btn {
     white-space: nowrap;
+    padding: 10px 14px;
   }
   .settings-content {
-    padding: 20px 16px;
+    padding: 24px 16px;
   }
-}
-
-/* Courier Chips Grid Styling */
-.courier-chips-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-secondary);
-  min-height: 100px;
-}
-.courier-chip {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 6px 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all var(--transition);
-  font-size: 13px;
-  font-weight: 500;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-.courier-chip:hover {
-  border-color: var(--accent);
-  transform: translateY(-1.5px);
-  box-shadow: var(--shadow-sm);
-}
-.courier-chip.editing {
-  border-color: var(--accent);
-  background: var(--bg-secondary);
-}
-.chip-display-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.chip-name {
-  cursor: pointer;
-  color: var(--text-primary);
-}
-.chip-icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition);
-}
-.chip-icon-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-.chip-icon-btn.delete:hover {
-  background: var(--danger-light);
-  color: var(--danger);
-}
-.chip-edit-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.chip-edit-input {
-  border: 1px solid var(--accent);
-  padding: 3px 8px;
-  font-size: 12px;
-  border-radius: var(--radius-sm);
-  width: 120px;
-}
-.btn-chip-action {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  width: 22px;
-  height: 22px;
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition);
-}
-.btn-chip-action.check {
-  color: var(--success);
-  border-color: var(--success);
-}
-.btn-chip-action.check:hover {
-  background: var(--success-light);
-}
-.btn-chip-action.cancel {
-  color: var(--danger);
-  border-color: var(--danger);
-}
-.btn-chip-action.cancel:hover {
-  background: var(--danger-light);
+  .settings-card {
+    padding: 24px;
+  }
 }
 
 /* Backup Database Progress Bar */
@@ -2009,47 +2814,55 @@ input:focus + .slider {
   flex-direction: column;
   gap: 8px;
 }
+
 .db-progress-meta {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
 }
+
 .progress-text {
   color: var(--text-secondary);
 }
+
 .progress-percentage {
   font-weight: 600;
   color: var(--accent);
 }
+
 .progress-bar-bg {
   background: var(--bg-primary);
   border: 1px solid var(--border);
-  height: 8px;
+  height: 10px;
   border-radius: 999px;
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }
+
 .progress-bar-fill {
   height: 100%;
-  background: var(--accent);
+  background: linear-gradient(90deg, var(--accent) 0%, #8b5cf6 100%);
   border-radius: 999px;
-  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
+
 .progress-bar-fill.warning {
-  background: #f97316;
+  background: linear-gradient(90deg, #f97316 0%, #ef4444 100%);
 }
 
 /* Pending Backup Card preview */
 .pending-backup-card {
-  background: var(--bg-secondary);
+  background: rgba(255, 255, 255, 0.015);
   border: 2px solid var(--accent);
   border-radius: var(--radius-lg);
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   text-align: left;
 }
+
 .pending-header {
   display: flex;
   justify-content: space-between;
@@ -2057,32 +2870,38 @@ input:focus + .slider {
   border-bottom: 1px solid var(--border);
   padding-bottom: 10px;
 }
+
 .pending-title {
   font-size: 14px;
   font-weight: 700;
   color: var(--accent);
 }
+
 .pending-meta-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
+
 .pending-meta-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
+
 .p-label {
   font-size: 11px;
   text-transform: uppercase;
   color: var(--text-muted);
   letter-spacing: 0.5px;
 }
+
 .p-val {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
 }
+
 .btn-apply-backup {
   width: 100%;
   padding: 10px;
@@ -2090,5 +2909,206 @@ input:focus + .slider {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* AI Logs Viewer */
+.status-badge.badge-success {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.status-badge.badge-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.btn-xs {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.empty-logs-state {
+  text-align: center;
+  padding: 28px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+/* AI Restructuring Styles */
+.ai-settings-tab-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.example-rules-box {
+  background: rgba(15, 17, 23, 0.4);
+  border: 1px solid rgba(92, 141, 246, 0.2);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-top: 8px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme='light'] .example-rules-box {
+  background: rgba(0, 0, 0, 0.015);
+  border-color: rgba(55, 104, 214, 0.15);
+}
+
+.example-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.example-list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.example-list li code {
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+:root[data-theme='light'] .example-list li code {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.advanced-toggle-badge {
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.advanced-toggle-badge.active {
+  background: var(--accent-light);
+  color: var(--accent);
+  border-color: rgba(92, 141, 246, 0.2);
+}
+
+.badge-dinamico {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 650;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-dinamico.badge-info {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.badge-dinamico.badge-success {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.badge-dinamico.badge-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.badge-dinamico.badge-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.warning-alert {
+  background: rgba(245, 158, 11, 0.05);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-left: 4px solid #f59e0b;
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.03);
+}
+
+.alert-title {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: #d97706;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alert-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.slider-control-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 260px;
+}
+
+/* Custom styled range slider */
+.range-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  outline: none;
+  transition: background 0.3s ease;
+}
+
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: var(--accent-hover);
+}
+
+.slider-value-preview {
+  font-size: 13.5px;
+  font-weight: 600;
+  width: 38px;
+  text-align: right;
+  font-family: monospace;
+  color: var(--text-primary);
 }
 </style>

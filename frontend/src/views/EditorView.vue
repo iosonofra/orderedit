@@ -25,6 +25,31 @@
         </div>
       </Transition>
 
+      <!-- Overlay Glassmorfico per Elaborazione Smart AI -->
+      <Transition name="fade">
+        <div v-if="aiStore.isProcessing" class="ai-loader-overlay">
+          <div class="ai-loader-content">
+            <div class="ai-loader-ring-wrapper">
+              <div class="ai-loader-ring"></div>
+              <svg class="ai-loader-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="13" r="4" />
+                <line x1="12" y1="16" x2="16" y2="20" />
+                <path d="M15 4.5c0 1.2.6 1.8 1.8 1.8-1.2 0-1.8.6-1.8 1.8 0-1.2-.6-1.8-1.8-1.8 1.2 0 1.8-.6 1.8-1.8z" fill="currentColor" stroke="none" />
+              </svg>
+            </div>
+            <h3 class="ai-loader-title">Elaborazione Smart AI</h3>
+            <p class="ai-loader-subtitle">{{ aiStore.progressMessage || 'Elaborazione in corso...' }}</p>
+            
+            <div class="ai-loader-progress-container">
+              <div class="ai-loader-progress-bar">
+                <div class="ai-loader-progress-fill" :style="{ width: aiStore.progressPercent + '%' }"></div>
+              </div>
+              <span class="ai-loader-progress-percent">{{ aiStore.progressPercent }}%</span>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
       <Transition name="fade">
         <div v-if="!spreadsheetStore.hasData && !spreadsheetStore.isProcessing" class="empty-state">
           <div class="welcome-container">
@@ -100,19 +125,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import AppToolbar from '../components/AppToolbar.vue'
 import SimpleSheetGrid from '../components/SimpleSheetGrid.vue'
 import { useSpreadsheetStore } from '../stores/spreadsheet.js'
 import { useNotificationStore } from '../stores/notification.js'
 import { useTemplateStore } from '../stores/templates.js'
+import { useAiStore } from '../stores/ai.js'
 
 const spreadsheetStore = useSpreadsheetStore()
 const notificationStore = useNotificationStore()
 const templateStore = useTemplateStore()
+const aiStore = useAiStore()
 
 const dragging = ref(false)
+
+// Nessun messaggio rotante necessario, usiamo aiStore.progressMessage reale
 let autosaveTimer = null
 
 function persistCurrentWorkbookState() {
@@ -257,5 +286,62 @@ function onDrop(e) {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* AI Progress bar in central overlay */
+.ai-loader-progress-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 16px;
+  animation: aiProgressFadeIn 0.3s ease;
+}
+
+@keyframes aiProgressFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ai-loader-progress-bar {
+  width: 100%;
+  max-width: 280px;
+  height: 8px;
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+:root[data-theme='light'] .ai-loader-progress-bar {
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.ai-loader-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #6366f1);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation: aiShimmer 2s ease-in-out infinite;
+}
+
+@keyframes aiShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.ai-loader-progress-percent {
+  font-size: 13px;
+  font-weight: 700;
+  color: #a855f7;
+  letter-spacing: -0.2px;
+}
+
+:root[data-theme='light'] .ai-loader-progress-percent {
+  color: #4f46e5;
 }
 </style>

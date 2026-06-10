@@ -10,113 +10,105 @@
 
     <div class="toolbar-left">
       <!-- Gruppo 1: File & Storia -->
-      <div class="toolbar-group">
-        <button id="btn-upload" class="btn btn-secondary btn-icon-inline" @click="fileInputRef.click()" title="Ctrl+O">
-          <svg viewBox="0 0 24 24">
-            <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10H6v-2h8v2zm4-4H6v-2h12v2z"/>
-          </svg>
-          <span>Carica Excel</span>
-        </button>
-        <div class="group-divider"></div>
-        <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData || spreadsheetStore.checkpointIndex <= 0" @click="undoAction" title="Annulla ultima modifica (Ctrl+Z)">
-          <svg viewBox="0 0 24 24">
-            <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
-          </svg>
-          <span>Annulla</span>
-        </button>
-        <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData || spreadsheetStore.checkpointIndex >= spreadsheetStore.checkpoints.length - 1" @click="redoAction" title="Ripristina modifica annullata (Ctrl+Y)">
-          <svg viewBox="0 0 24 24">
-            <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/>
-          </svg>
-          <span>Ripeti</span>
-        </button>
-      </div>
+      <button id="btn-upload" class="btn btn-secondary btn-icon-inline" @click="fileInputRef.click()" title="Ctrl+O">
+        <svg viewBox="0 0 24 24">
+          <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10H6v-2h8v2zm4-4H6v-2h12v2z"/>
+        </svg>
+        <span>Carica Excel</span>
+      </button>
+
+      <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData || spreadsheetStore.checkpointIndex <= 0" @click="undoAction" title="Annulla ultima modifica (Ctrl+Z)">
+        <svg viewBox="0 0 24 24">
+          <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
+        </svg>
+        <span>Annulla</span>
+      </button>
+      <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData || spreadsheetStore.checkpointIndex >= spreadsheetStore.checkpoints.length - 1" @click="redoAction" title="Ripristina modifica annullata (Ctrl+Y)">
+        <svg viewBox="0 0 24 24">
+          <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/>
+        </svg>
+        <span>Ripeti</span>
+      </button>
 
       <div class="toolbar-divider"></div>
 
       <!-- Gruppo 2: Strumenti Testo -->
-      <div class="toolbar-group">
-        <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData" @click="showSearchModal = true" title="Ctrl+F">
+      <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData" @click="showSearchModal = true" title="Ctrl+F">
+        <svg viewBox="0 0 24 24">
+          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm2.5-7H8v1.5h4V7zm0 3.5H8V12h4v-1.5z"/>
+        </svg>
+        <span>Trova e sostituisci</span>
+      </button>
+
+      <div class="bulk-wrap">
+        <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData" @click="toggleBulkMenu">
           <svg viewBox="0 0 24 24">
-            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm2.5-7H8v1.5h4V7zm0 3.5H8V12h4v-1.5z"/>
+            <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.3C.5 6.7.9 9.8 2.9 11.8c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.6z"/>
           </svg>
-          <span>Trova e sostituisci</span>
+          <span>Strumenti rapidi</span>
         </button>
-
-        <div class="group-divider"></div>
-
-        <div class="bulk-wrap">
-          <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData" @click="toggleBulkMenu">
-            <svg viewBox="0 0 24 24">
-              <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.3C.5 6.7.9 9.8 2.9 11.8c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.6z"/>
-            </svg>
-            <span>Strumenti rapidi</span>
-          </button>
-          <div v-if="showBulkMenu" class="bulk-menu">
-            <template v-for="item in bulkActions" :key="item.label">
-              <div v-if="item.dividerBefore" class="bulk-menu-divider"></div>
-              <button
-                class="bulk-item"
-                :class="{ 'bulk-item-danger': item.danger }"
-                :title="item.tooltip"
-                @click="item.action()"
-              >
-                <svg class="bulk-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path :d="item.icon" />
-                </svg>
-                <span>{{ item.label }}</span>
-              </button>
-            </template>
-          </div>
-        </div>
-
-        <div class="group-divider"></div>
-
-        <div class="bulk-wrap">
-          <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData" @click="toggleCourierMenu">
-            <svg viewBox="0 0 24 24">
-              <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm11.5 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM15 12H4V6h11v6z"/>
-            </svg>
-            <span>Imposta corriere</span>
-          </button>
-          <div v-if="showCourierMenu" class="bulk-menu">
+        <div v-if="showBulkMenu" class="bulk-menu">
+          <template v-for="item in bulkActions" :key="item.label">
+            <div v-if="item.dividerBefore" class="bulk-menu-divider"></div>
             <button
-              v-for="preset in courierPresetStore.presets"
-              :key="preset"
               class="bulk-item"
-              @click="applyCourierPreset(preset)"
+              :class="{ 'bulk-item-danger': item.danger }"
+              :title="item.tooltip"
+              @click="item.action()"
             >
               <svg class="bulk-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path :d="icons.truck" />
+                <path :d="item.icon" />
               </svg>
-              <span>{{ preset }}</span>
+              <span>{{ item.label }}</span>
             </button>
-            <div class="bulk-menu-divider"></div>
-            <button class="bulk-item" @click="goToSettings">
-              <svg class="bulk-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path :d="icons.settings" />
-              </svg>
-              <span>Gestisci preset...</span>
-            </button>
-          </div>
+          </template>
         </div>
-
-        <div class="group-divider"></div>
-
-        <!-- Gruppo 3: Catalogo & Azioni -->
-        <button
-          id="btn-save-template"
-          class="btn btn-secondary btn-icon-inline"
-          :disabled="!spreadsheetStore.hasData || renaming"
-          @click="saveCurrentCellAsTemplate"
-          title="Salva o aggiorna il template usando i dati di questa riga"
-        >
-          <svg viewBox="0 0 24 24">
-            <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13zm-2-9H9v2h6V9zm0 3H9v2h6v-2z"/>
-          </svg>
-          <span>Salva nel catalogo</span>
-        </button>
       </div>
+
+      <div class="bulk-wrap">
+        <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData" @click="toggleCourierMenu">
+          <svg viewBox="0 0 24 24">
+            <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm11.5 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM15 12H4V6h11v6z"/>
+          </svg>
+          <span>Imposta corriere</span>
+        </button>
+        <div v-if="showCourierMenu" class="bulk-menu">
+          <button
+            v-for="preset in courierPresetStore.presets"
+            :key="preset"
+            class="bulk-item"
+            @click="applyCourierPreset(preset)"
+          >
+            <svg class="bulk-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path :d="icons.truck" />
+            </svg>
+            <span>{{ preset }}</span>
+          </button>
+          <div class="bulk-menu-divider"></div>
+          <button class="bulk-item" @click="goToSettings">
+            <svg class="bulk-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path :d="icons.settings" />
+            </svg>
+            <span>Gestisci preset...</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <!-- Gruppo 3: Catalogo & Azioni -->
+      <button
+        id="btn-save-template"
+        class="btn btn-secondary btn-icon-inline"
+        :disabled="!spreadsheetStore.hasData || renaming"
+        @click="saveCurrentCellAsTemplate"
+        title="Salva o aggiorna il template usando i dati di questa riga"
+      >
+        <svg viewBox="0 0 24 24">
+          <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13zm-2-9H9v2h6V9zm0 3H9v2h6v-2z"/>
+        </svg>
+        <span>Salva nel catalogo</span>
+      </button>
 
       <button
         id="btn-autorename"
@@ -152,6 +144,8 @@
           <span>Elabora con AI</span>
         </template>
       </button>
+
+
 
       <div class="toolbar-divider"></div>
 
@@ -2730,72 +2724,8 @@ async function saveCurrentCellAsTemplate() {
   gap: 10px;
   flex-shrink: 0;
 }
-.toolbar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.toolbar-left { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .toolbar-right { display: flex; align-items: center; gap: 8px; }
-
-/* Toolbar Group Container */
-.toolbar-group {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.015);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 2px;
-  gap: 1px;
-  transition: border-color var(--transition), background var(--transition);
-}
-
-:root[data-theme='light'] .toolbar-group {
-  background: rgba(0, 0, 0, 0.015);
-  border-color: var(--border);
-}
-
-.group-divider {
-  width: 1px;
-  height: 16px;
-  background-color: var(--border);
-  opacity: 0.6;
-  align-self: center;
-}
-
-/* Override .btn styling inside a group to merge them together */
-.toolbar-group .btn {
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 6px 12px;
-  box-shadow: none !important;
-}
-
-.toolbar-group .btn:hover:not(:disabled) {
-  background: var(--bg-hover) !important;
-  color: var(--accent) !important;
-  transform: none; /* No translation inside group to keep it stable */
-}
-
-/* Smooth active feedback inside group */
-.toolbar-group .btn:active:not(:disabled) {
-  background: rgba(255, 255, 255, 0.06) !important;
-  transform: scale(0.97);
-}
-
-:root[data-theme='light'] .toolbar-group .btn:active:not(:disabled) {
-  background: rgba(0, 0, 0, 0.04) !important;
-}
-
-/* Keep rounded corners on extreme buttons of the group */
-.toolbar-group > *:first-child,
-.toolbar-group > *:first-child .btn {
-  border-top-left-radius: calc(var(--radius-md) - 2px) !important;
-  border-bottom-left-radius: calc(var(--radius-md) - 2px) !important;
-}
-
-.toolbar-group > *:last-child,
-.toolbar-group > *:last-child .btn,
-.toolbar-group > .bulk-wrap:last-child .btn {
-  border-top-right-radius: calc(var(--radius-md) - 2px) !important;
-  border-bottom-right-radius: calc(var(--radius-md) - 2px) !important;
-}
 
 .status-badge {
   font-size: 11px;

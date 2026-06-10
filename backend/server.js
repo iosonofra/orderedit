@@ -26,6 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/xlsx', require('./routes/xlsx'));
 app.use('/api/templates', require('./routes/templates'));
 app.use('/api/couriers', require('./routes/couriers'));
+app.use('/api/ai', require('./routes/ai'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
