@@ -73,6 +73,24 @@
         <div class="group-divider"></div>
 
         <div class="bulk-wrap">
+          <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData" @click="toggleNoteMenu">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16v13H8l-4 4V4Zm3 5h10M7 13h7"/></svg>
+            <span>Imposta Note</span>
+          </button>
+          <div v-if="showNoteMenu" class="bulk-menu">
+            <button v-for="preset in notePresetStore.presets" :key="preset" class="bulk-item" @click="applyNotePreset(preset)">
+              <svg class="bulk-icon" viewBox="0 0 24 24"><path :d="icons.note" /></svg><span>{{ preset }}</span>
+            </button>
+            <div class="bulk-menu-divider"></div>
+            <button class="bulk-item" @click="goToNoteSettings">
+              <svg class="bulk-icon" viewBox="0 0 24 24"><path :d="icons.settings" /></svg><span>Gestisci preset...</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="group-divider"></div>
+
+        <div class="bulk-wrap">
           <button class="btn btn-secondary btn-icon-inline" :disabled="!spreadsheetStore.hasData" @click="toggleCourierMenu">
             <svg viewBox="0 0 24 24">
               <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm11.5 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM15 12H4V6h11v6z"/>
@@ -80,22 +98,13 @@
             <span>Imposta corriere</span>
           </button>
           <div v-if="showCourierMenu" class="bulk-menu">
-            <button
-              v-for="preset in courierPresetStore.presets"
-              :key="preset"
-              class="bulk-item"
-              @click="applyCourierPreset(preset)"
-            >
-              <svg class="bulk-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path :d="icons.truck" />
-              </svg>
+            <button v-for="preset in courierPresetStore.presets" :key="preset" class="bulk-item" @click="applyCourierPreset(preset)">
+              <svg class="bulk-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="icons.truck" /></svg>
               <span>{{ preset }}</span>
             </button>
             <div class="bulk-menu-divider"></div>
             <button class="bulk-item" @click="goToSettings">
-              <svg class="bulk-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path :d="icons.settings" />
-              </svg>
+              <svg class="bulk-icon" viewBox="0 0 24 24" aria-hidden="true"><path :d="icons.settings" /></svg>
               <span>Gestisci preset...</span>
             </button>
           </div>
@@ -411,6 +420,7 @@ import { useSpreadsheetStore } from '../stores/spreadsheet.js'
 import { useNotificationStore } from '../stores/notification.js'
 import { useTemplateStore } from '../stores/templates.js'
 import { useCourierPresetStore } from '../stores/courierPresets.js'
+import { useNotePresetStore } from '../stores/notePresets.js'
 import { useAiStore } from '../stores/ai.js'
 import AiAnomaliesModal from './AiAnomaliesModal.vue'
 
@@ -418,6 +428,7 @@ const spreadsheetStore = useSpreadsheetStore()
 const notificationStore = useNotificationStore()
 const templateStore = useTemplateStore()
 const courierPresetStore = useCourierPresetStore()
+const notePresetStore = useNotePresetStore()
 const router = useRouter()
 
 const fileInputRef = ref(null)
@@ -431,6 +442,7 @@ const lastStats = ref(null)
 const operationText = ref('')
 const showBulkMenu = ref(false)
 const showCourierMenu = ref(false)
+const showNoteMenu = ref(false)
 const showMissingModal = ref(false)
 const missingReport = ref([])
 const missingNameInputs = ref({})
@@ -552,6 +564,7 @@ const MIN_COLUMN_WIDTH = 72
 const MAX_COLUMN_WIDTH = 1000
 
 const icons = {
+  note: 'M4 4h16v13H8l-4 4V4Zm3 5h10M7 13h7',
   truck: 'M4 7h11v8H4V7Zm11 3h3l2 2v3h-5v-5ZM7 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM4 15h1M9 15h6M19 15h1',
   settings: 'M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0-5v3M12 18v3M4.9 4.9 7 7M17 17l2.1 2.1M3 12h3M18 12h3M4.9 19.1 7 17M17 7l2.1-2.1',
 }
@@ -646,6 +659,7 @@ function handleKeyboard(e) {
 
 onMounted(() => {
   courierPresetStore.load()
+  notePresetStore.load()
   aiStore.load()
   window.addEventListener('keydown', handleKeyboard)
   window.addEventListener('click', clickAwayBulk)
@@ -664,6 +678,7 @@ function clickAwayBulk(e) {
   if (!target.closest('.bulk-wrap')) {
     showBulkMenu.value = false
     showCourierMenu.value = false
+    showNoteMenu.value = false
   }
 }
 
@@ -2635,23 +2650,31 @@ async function confirmExport() {
 function undoAction() {
   if (!spreadsheetStore.undo()) return
   reloadGrid(spreadsheetStore.sheets)
-  notificationStore.show({ type: 'info', message: 'Undo applicato' })
+  notificationStore.show({ type: 'info', message: 'Modifica annullata' })
 }
 
 function redoAction() {
   if (!spreadsheetStore.redo()) return
   reloadGrid(spreadsheetStore.sheets)
-  notificationStore.show({ type: 'info', message: 'Redo applicato' })
+  notificationStore.show({ type: 'info', message: 'Modifica ripristinata' })
 }
 
 function toggleBulkMenu() {
   showCourierMenu.value = false
+  showNoteMenu.value = false
   showBulkMenu.value = !showBulkMenu.value
 }
 
 function toggleCourierMenu() {
   showBulkMenu.value = false
+  showNoteMenu.value = false
   showCourierMenu.value = !showCourierMenu.value
+}
+
+function toggleNoteMenu() {
+  showBulkMenu.value = false
+  showCourierMenu.value = false
+  showNoteMenu.value = !showNoteMenu.value
 }
 
 function applyCourierPreset(preset) {
@@ -2672,6 +2695,38 @@ function applyCourierPreset(preset) {
   }
   persistProgrammaticSnapshot({ reload: true })
   notificationStore.show({ type: 'success', message: `Corriere "${preset}" applicato su ${changed} righe` })
+}
+
+function applyNotePreset(preset) {
+  showNoteMenu.value = false
+  if (!ensureDataLoaded()) return
+  const data = getActiveSheetData()
+  let target = null
+  for (let r = 0; r < Math.min(6, data.length) && !target; r++) {
+    const row = data[r]
+    if (!Array.isArray(row)) continue
+    for (let c = 0; c < row.length; c++) {
+      const key = normalizeHeaderKey(getCellText(row[c]))
+      if (key === 'note' || key === 'notes') { target = { headerRow: r, col: c }; break }
+    }
+  }
+  if (!target) {
+    notificationStore.show({ type: 'error', message: 'Colonna Note non trovata.' })
+    return
+  }
+  let changed = 0
+  for (let r = target.headerRow + 1; r < data.length; r++) {
+    if (!getCellText(data[r]?.[target.col]).trim()) continue
+    setCellValueAndSync(r, target.col, String(preset))
+    changed++
+  }
+  persistProgrammaticSnapshot({ reload: true })
+  notificationStore.show({ type: 'success', message: `Nota "${preset}" applicata su ${changed} righe` })
+}
+
+function goToNoteSettings() {
+  showNoteMenu.value = false
+  router.push({ path: '/settings', query: { tab: 'notes' } })
 }
 
 function goToSettings() {

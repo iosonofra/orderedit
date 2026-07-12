@@ -33,6 +33,11 @@
           Preset Corrieri
         </button>
 
+        <button class="sidebar-tab-btn" :class="{ active: activeTab === 'notes' }" @click="activeTab = 'notes'">
+          <svg class="tab-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v13H8l-4 4V4Zm3 5h10M7 13h7"/></svg>
+          Preset Note
+        </button>
+
         <button
           class="sidebar-tab-btn"
           :class="{ active: activeTab === 'backup' }"
@@ -262,6 +267,26 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'notes'" class="settings-card animate-fade-in">
+          <div class="card-header">
+            <h3 class="card-title">Preset Note</h3>
+            <p class="card-subtitle">Gestisci i testi predefiniti da applicare alla colonna Note. Salvati in tempo reale sul server e inclusi nel backup.</p>
+          </div>
+          <div class="couriers-manager">
+            <div class="add-preset-box">
+              <input v-model="newNotePreset" class="input elegant-input" placeholder="es. Chiamare prima della consegna..." @keyup.enter="addNotePreset" />
+              <button class="btn btn-primary add-btn" @click="addNotePreset">＋ Aggiungi</button>
+            </div>
+            <div class="presets-list-container" style="border: none; background: transparent;"><div class="courier-chips-grid">
+              <div v-for="(preset, idx) in notePresetStore.presets" :key="`${preset}-${idx}`" class="courier-chip" :class="{ editing: editingNoteIndex === idx }">
+                <div v-if="editingNoteIndex === idx" class="chip-edit-wrapper"><input v-model="editingNoteName" class="input chip-edit-input" @keyup.enter="saveNotePreset" @keyup.escape="cancelNoteEdit" autofocus /><button class="btn-chip-action check" @click="saveNotePreset">✓</button><button class="btn-chip-action cancel" @click="cancelNoteEdit">×</button></div>
+                <div v-else class="chip-display-wrapper"><span class="chip-name" @dblclick="startNoteEdit(idx, preset)">{{ preset }}</span><button class="chip-icon-btn edit" @click="startNoteEdit(idx, preset)" title="Modifica">✎</button><button class="chip-icon-btn delete" @click="removeNotePreset(idx)" title="Elimina">×</button></div>
+              </div>
+              <div v-if="notePresetStore.presets.length === 0" class="empty-presets-state" style="width: 100%;"><p>Nessun preset note configurato sul server.</p></div>
+            </div></div>
           </div>
         </div>
 
@@ -1113,16 +1138,20 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import api from '../api/index.js'
 import { useCourierPresetStore } from '../stores/courierPresets.js'
+import { useNotePresetStore } from '../stores/notePresets.js'
 import { useSpreadsheetStore } from '../stores/spreadsheet.js'
 import { useNotificationStore } from '../stores/notification.js'
 import { useAiStore } from '../stores/ai.js'
 
 const notificationStore = useNotificationStore()
 const courierPresetStore = useCourierPresetStore()
+const notePresetStore = useNotePresetStore()
 const spreadsheetStore = useSpreadsheetStore()
 const aiStore = useAiStore()
+const route = useRoute()
 
 const activeTab = ref('general')
 
@@ -1337,6 +1366,9 @@ async function testAiConnection() {
 }
 
 const newCourierPreset = ref('')
+const newNotePreset = ref('')
+const editingNoteIndex = ref(-1)
+const editingNoteName = ref('')
 const editingCourierIndex = ref(-1)
 const editingCourierName = ref('')
 const exportMode = ref('same')
@@ -1366,7 +1398,9 @@ const pendingBackupData = ref(null)
 const pendingBackupFile = ref(null)
 
 onMounted(() => {
+  if (route.query.tab === 'notes') activeTab.value = 'notes'
   courierPresetStore.load()
+  notePresetStore.load()
   spreadsheetStore.loadExportPrefs()
   spreadsheetStore.loadEditorPrefs()
   exportMode.value = spreadsheetStore.exportNamingMode
@@ -1455,7 +1489,8 @@ function handleExportConfig() {
         position: notificationStore.position,
         level: notificationStore.level
       },
-      courierPresets: courierPresetStore.presets
+      courierPresets: courierPresetStore.presets,
+      notePresets: notePresetStore.presets
     }
     
     const blob = new Blob([JSON.stringify(backupObj, null, 2)], { type: 'application/json' })
@@ -1571,6 +1606,10 @@ async function applyPendingBackup() {
       await courierPresetStore.importPresets(backup.courierPresets)
       importedSomething = true
     }
+    if (Array.isArray(backup.notePresets)) {
+      await notePresetStore.importPresets(backup.notePresets)
+      importedSomething = true
+    }
     
     if (importedSomething) {
       notificationStore.show({ type: 'success', message: 'Backup importato e applicato correttamente!' })
@@ -1645,6 +1684,7 @@ async function handleFactoryReset() {
     
     // 4. Reset courier presets
     await courierPresetStore.resetToDefaults()
+    await notePresetStore.resetToDefaults()
     
     notificationStore.show({ type: 'success', message: 'Ripristino di fabbrica completato con successo!' })
   } catch (err) {
@@ -1664,6 +1704,32 @@ function addCourierPreset() {
   }
   newCourierPreset.value = ''
   notificationStore.show({ type: 'success', message: 'Preset corriere aggiunto.' })
+}
+
+function addNotePreset() {
+  const value = newNotePreset.value.trim()
+  if (!value || !notePresetStore.add(value)) {
+    notificationStore.show({ type: 'warning', message: 'Inserisci un testo preset valido e non duplicato.' })
+    return
+  }
+  newNotePreset.value = ''
+  notificationStore.show({ type: 'success', message: 'Preset note aggiunto.' })
+}
+
+function startNoteEdit(index, value) { editingNoteIndex.value = index; editingNoteName.value = value }
+function cancelNoteEdit() { editingNoteIndex.value = -1; editingNoteName.value = '' }
+function saveNotePreset() {
+  if (!notePresetStore.update(editingNoteIndex.value, editingNoteName.value)) {
+    notificationStore.show({ type: 'warning', message: 'Testo non valido o già presente.' })
+    return
+  }
+  cancelNoteEdit()
+  notificationStore.show({ type: 'success', message: 'Preset note aggiornato.' })
+}
+function removeNotePreset(index) {
+  if (!window.confirm('Eliminare questo preset note?')) return
+  notePresetStore.remove(index)
+  notificationStore.show({ type: 'success', message: 'Preset note eliminato.' })
 }
 
 function startCourierEdit(index, value) {

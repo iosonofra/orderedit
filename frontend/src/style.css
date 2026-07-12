@@ -853,6 +853,7 @@ a:hover,
   position: fixed;
   z-index: 9999;
   min-width: 250px;
+  overflow: visible;
   background: rgba(27, 32, 48, 0.78);
   backdrop-filter: blur(14px) saturate(190%);
   border: 1px solid rgba(255, 255, 255, 0.09);
@@ -875,6 +876,7 @@ a:hover,
 
 .context-menu-item {
   width: 100%;
+  max-width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -997,6 +999,7 @@ a:hover,
 
 .submenu-item {
   width: 100%;
+  max-width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2385,7 +2388,4 @@ a:hover,
     opacity: 1;
   }
 }
-
-
-
 

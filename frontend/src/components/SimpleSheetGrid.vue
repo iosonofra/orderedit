@@ -1181,6 +1181,7 @@ function openCellContextMenu(event, row, col) {
   }
   activeContextItemIndex.value = -1
   nextTick(() => {
+    positionContextMenu(event)
     window.addEventListener('click', closeCellContextMenu)
     window.addEventListener('keydown', handleContextMenuKeydown)
   })
@@ -1197,8 +1198,30 @@ function openHeaderContextMenu(event, col) {
   }
   activeContextItemIndex.value = -1
   nextTick(() => {
+    positionContextMenu(event)
     window.addEventListener('click', closeCellContextMenu)
     window.addEventListener('keydown', handleContextMenuKeydown)
+  })
+}
+
+// Il menu viene inizialmente renderizzato sul punto del click, poi spostato
+// dentro la viewport se non c'è spazio sufficiente (tipicamente sull'ultima riga).
+function positionContextMenu(event) {
+  nextTick(() => {
+    const menu = document.querySelector('.context-menu-floating')
+    if (!menu) return
+    const margin = 8
+    const rect = menu.getBoundingClientRect()
+    let x = event.clientX
+    let y = event.clientY
+    if (x + rect.width > window.innerWidth - margin) {
+      x = Math.max(margin, window.innerWidth - rect.width - margin)
+    }
+    if (y + rect.height > window.innerHeight - margin) {
+      y = Math.max(margin, event.clientY - rect.height)
+    }
+    contextMenu.value.x = x
+    contextMenu.value.y = y
   })
 }
 
