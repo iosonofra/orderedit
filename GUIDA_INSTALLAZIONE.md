@@ -1,10 +1,10 @@
-﻿# Guida all'Installazione e Aggiornamento di OrderEdit
+# Guida all'Installazione e Aggiornamento di OrderEdit
 
 ## 1. Aggiornamento (Senza perdere catalogo e impostazioni)
 Per aggiornare un'installazione esistente mantenendo i dati salvati:
 1. Chiudere l'applicazione OrderEdit (fermare i terminali di node/npm).
 2. Estrarre il contenuto di questo archivio ZIP direttamente sopra la cartella dell'applicazione esistente.
-3. Rispondere **SÃ¬ / Sovrascrivi** a tutte le richieste di sovrascrittura.
+3. Rispondere **Sì / Sovrascrivi** a tutte le richieste di sovrascrittura.
    *(Nota: Il file ZIP non contiene i database ackend/data/templates.json e ackend/data/couriers.json, quindi i tuoi dati correnti rimarranno al sicuro).*
 4. Aprire il terminale nella cartella dell'app ed eseguire 
 pm run install:all per installare eventuali nuove dipendenze.
@@ -23,4 +23,9 @@ Per installare l'applicazione per la prima volta:
    `ash
    npm start
    `
-5. L'applicazione creerÃ  automaticamente i database vuoti necessari all'avvio.
+5. L'applicazione creerà automaticamente i database vuoti necessari all'avvio.
+
+## 3. Configurazione PickCSV
+1. Aprire OrderEdit e andare in **Impostazioni > Integrazione Picking**.
+2. Inserire il token API PickCSV e premere **Salva token**.
+3. Il pulsante **Genera Picking** invierà il file come **Upload automatico** con canale **OrderEdit**.

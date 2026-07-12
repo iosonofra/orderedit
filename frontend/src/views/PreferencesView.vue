@@ -105,6 +105,18 @@
           </svg>
           Integrazione AI
         </button>
+
+        <button
+          class="sidebar-tab-btn"
+          :class="{ active: activeTab === 'picking' }"
+          @click="activeTab = 'picking'"
+        >
+          <svg class="tab-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H10l2 2h6.5A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-11Z" />
+            <path d="m12 9 4 4-4 4m4-4H8" />
+          </svg>
+          Integrazione Picking
+        </button>
       </nav>
     </div>
 
@@ -1131,6 +1143,43 @@
 
         </div>
 
+        <div v-if="activeTab === 'picking'" class="settings-card animate-fade-in">
+          <div class="card-header">
+            <h3 class="card-title">Integrazione Picking</h3>
+            <p class="card-subtitle">Configura il token per inviare gli ordini a PickCSV come upload automatico dal canale OrderEdit.</p>
+          </div>
+          <div class="settings-form-grid">
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">URL servizio picking</span>
+                <span class="setting-desc">Endpoint completo di importazione automatica, personalizzabile per ogni installazione.</span>
+              </div>
+              <div class="setting-control" style="width: min(100%, 520px);">
+                <input v-model="pickingUrl" type="url" class="input" placeholder="https://pick.iosonofra.click/api/import/auto" style="width: 100%;" />
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Token API PickCSV</span>
+                <span class="setting-desc">Il token viene salvato dal backend locale e non viene inviato al browser.</span>
+              </div>
+              <div class="setting-control" style="display: flex; gap: 8px; width: min(100%, 420px);">
+                <input v-model="pickingToken" :type="showPickingToken ? 'text' : 'password'" class="input" placeholder="Inserisci il token PickCSV" autocomplete="new-password" style="flex: 1;" />
+                <button class="btn btn-secondary" type="button" @click="showPickingToken = !showPickingToken">{{ showPickingToken ? 'Nascondi' : 'Mostra' }}</button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Stato configurazione</span>
+                <span class="setting-desc">{{ pickingHasToken ? 'Token configurato: il prossimo invio sarà automatico.' : 'Token non configurato.' }}</span>
+              </div>
+              <div class="setting-control">
+                <button class="btn btn-primary btn-with-icon" type="button" :disabled="savingPicking" @click="savePickingSettings">{{ savingPicking ? 'Salvataggio...' : 'Salva configurazione' }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1154,6 +1203,11 @@ const aiStore = useAiStore()
 const route = useRoute()
 
 const activeTab = ref('general')
+const pickingToken = ref('')
+const pickingUrl = ref('https://pick.iosonofra.click/api/import/auto')
+const pickingHasToken = ref(false)
+const showPickingToken = ref(false)
+const savingPicking = ref(false)
 
 const temperatureBadge = computed(() => {
   const t = aiStore.temperature ?? 0.1
@@ -1399,6 +1453,7 @@ const pendingBackupFile = ref(null)
 
 onMounted(() => {
   if (route.query.tab === 'notes') activeTab.value = 'notes'
+  if (route.query.tab === 'picking') activeTab.value = 'picking'
   courierPresetStore.load()
   notePresetStore.load()
   spreadsheetStore.loadExportPrefs()
@@ -1465,6 +1520,7 @@ onMounted(() => {
     await aiStore.fetchLogs()
   })
   loadBackupStats()
+  loadPickingSettings()
 })
 
 function saveColumnMappings() {
@@ -1704,6 +1760,33 @@ function addCourierPreset() {
   }
   newCourierPreset.value = ''
   notificationStore.show({ type: 'success', message: 'Preset corriere aggiunto.' })
+}
+
+async function loadPickingSettings() {
+  try {
+    const { data } = await api.get('/picking/config')
+    pickingToken.value = data?.token || ''
+    pickingUrl.value = data?.url || pickingUrl.value
+    pickingHasToken.value = Boolean(data?.hasToken)
+  } catch (err) {
+    console.error('Errore caricamento impostazioni PickCSV:', err)
+  }
+}
+
+async function savePickingSettings() {
+  savingPicking.value = true
+  try {
+    const { data } = await api.put('/picking/config', { token: pickingToken.value, url: pickingUrl.value })
+    pickingHasToken.value = Boolean(data?.hasToken)
+    pickingToken.value = pickingHasToken.value ? '••••••••••••••••' : ''
+    pickingUrl.value = data?.url || pickingUrl.value
+    showPickingToken.value = false
+    notificationStore.show({ type: 'success', message: 'Configurazione PickCSV salvata. Il canale sarà OrderEdit / Upload automatico.' })
+  } catch (err) {
+    notificationStore.show({ type: 'error', message: `Salvataggio token fallito: ${err.message}` })
+  } finally {
+    savingPicking.value = false
+  }
 }
 
 function addNotePreset() {

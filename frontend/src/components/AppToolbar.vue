@@ -127,6 +127,8 @@
         </button>
       </div>
 
+      <div class="toolbar-divider"></div>
+
       <button
         id="btn-autorename"
         class="btn btn-primary btn-icon-inline"
@@ -181,6 +183,24 @@
           <span>Scarica Excel</span>
         </template>
         <span v-if="spreadsheetStore.isUnsaved" class="unsaved-dot"></span>
+      </button>
+
+      <div class="toolbar-divider"></div>
+
+      <button
+        id="btn-picking"
+        class="btn btn-primary btn-icon-inline"
+        :disabled="!spreadsheetStore.hasData || picking"
+        @click="generatePicking"
+        title="Invia il file corrente a PickCSV"
+      >
+        <span v-if="picking" class="spinner"></span>
+        <template v-else>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H10l2 2h6.5A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-11ZM5.5 6A.5.5 0 0 0 5 6.5v11a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H11.2l-2-2H5.5Zm6.5 3 4 4-4 4v-3H8v-2h4V9Z"/>
+          </svg>
+          <span>Genera Picking</span>
+        </template>
       </button>
     </div>
 
@@ -434,6 +454,7 @@ const router = useRouter()
 const fileInputRef = ref(null)
 const renaming = ref(false)
 const exporting = ref(false)
+const picking = ref(false)
 const aiStore = useAiStore()
 const processingAi = ref(false)
 const showAiAnomaliesModal = ref(false)
@@ -2644,6 +2665,52 @@ async function confirmExport() {
   } finally {
     operationText.value = ''
     exporting.value = false
+  }
+}
+
+async function generatePicking() {
+  if (!ensureDataLoaded() || picking.value) return
+
+  picking.value = true
+  operationText.value = 'Generazione picking...'
+  try {
+    const cleanSheets = getCurrentSheets()
+    const originalSheets = spreadsheetStore.originalSheets || []
+    const patches = buildExportPatches(cleanSheets, originalSheets)
+    const mergePatches = buildMergePatches(cleanSheets, originalSheets)
+    const columnPatches = buildColumnWidthPatches(cleanSheets, originalSheets)
+    const structureChanges = normalizeStructureChanges(spreadsheetStore.structureChanges)
+    const outFilename = spreadsheetStore.computeExportFilename(spreadsheetStore.filename || 'export.xlsx')
+
+    const response = await api.post('/xlsx/export', {
+      filename: outFilename,
+      patches,
+      merges: mergePatches,
+      columns: columnPatches,
+      structure: structureChanges,
+      backup: { enabled: false },
+    }, { responseType: 'blob' })
+
+    const form = new FormData()
+    form.append('file', response.data, outFilename)
+    operationText.value = 'Upload picking...'
+    const result = await api.post('/picking/upload', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90_000,
+    })
+
+    notificationStore.show({
+      type: 'success',
+      message: result.data?.summary?.importedOrders != null
+        ? `Picking generato: ${result.data.summary.importedOrders} ordini importati`
+        : 'Picking generato e inviato a PickCSV',
+    })
+    window.open('https://pick.iosonofra.click/', '_blank', 'noopener,noreferrer')
+  } catch {
+    // L'interceptor API mostra già il messaggio restituito dal server.
+  } finally {
+    operationText.value = ''
+    picking.value = false
   }
 }
 

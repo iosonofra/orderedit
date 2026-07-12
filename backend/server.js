@@ -28,6 +28,7 @@ app.use('/api/templates', require('./routes/templates'));
 app.use('/api/couriers', require('./routes/couriers'));
 app.use('/api/notes', require('./routes/notes'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/picking', require('./routes/picking'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
