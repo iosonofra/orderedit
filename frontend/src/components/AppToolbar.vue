@@ -2783,7 +2783,6 @@ function applyNotePreset(preset) {
   }
   let changed = 0
   for (let r = target.headerRow + 1; r < data.length; r++) {
-    if (!getCellText(data[r]?.[target.col]).trim()) continue
     setCellValueAndSync(r, target.col, String(preset))
     changed++
   }
