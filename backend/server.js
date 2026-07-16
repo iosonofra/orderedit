@@ -46,6 +46,17 @@ if (fs.existsSync(frontendDist)) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`✅ OrderEdit backend running on http://localhost:${PORT}`);
-});
+function startServer(port = PORT) {
+  const server = app.listen(port, () => {
+    const address = server.address();
+    const activePort = address && typeof address === 'object' ? address.port : port;
+    console.log(`✅ OrderEdit backend running on http://localhost:${activePort}`);
+  });
+  return server;
+}
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, startServer };

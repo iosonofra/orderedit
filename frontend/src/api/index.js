@@ -1,9 +1,16 @@
 import axios from 'axios'
 import { useNotificationStore } from '../stores/notification.js'
+import { getWorkspaceId } from './workspace.js'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 30000,
+})
+
+api.interceptors.request.use((config) => {
+  config.headers = config.headers || {}
+  config.headers['X-OrderEdit-Workspace'] = getWorkspaceId()
+  return config
 })
 
 api.interceptors.response.use(

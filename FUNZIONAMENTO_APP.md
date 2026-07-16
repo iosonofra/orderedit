@@ -69,14 +69,17 @@ conversioni o modifiche accidentali.
 ### Import Excel
 
 Il file viene inviato al backend con `POST /api/xlsx/upload`.
-Il backend salva una copia persistente in:
+Il frontend assegna a ogni scheda del browser un workspace casuale e lo invia
+tramite l'header `X-OrderEdit-Workspace`. Il backend salva una copia persistente
+separata per workspace in:
 
 ```text
-backend/data/uploads/last_upload.xlsx
+backend/data/uploads/<workspace-id>/last_upload.xlsx
 ```
 
 Questa copia originale viene poi riaperta in fase di export, cosi ExcelJS puo
-preservare il piu possibile struttura, fogli, larghezze, merge e formattazione.
+preservare il piu possibile struttura, fogli, larghezze, merge e formattazione,
+senza usare il file caricato da un altro utente.
 
 ### Griglia Excel web
 
@@ -331,7 +334,7 @@ Il frontend non invia tutto il file Excel ricostruito da zero. Invia invece:
 
 Il backend:
 
-1. ricarica `backend/data/uploads/last_upload.xlsx`;
+1. ricarica `backend/data/uploads/<workspace-id>/last_upload.xlsx`;
 2. applica solo le patch ricevute;
 3. applica merge e larghezze colonne;
 4. ripulisce testi e stili problematici;
@@ -344,8 +347,19 @@ Il backend:
 Ogni export viene salvato anche in:
 
 ```text
-backend/data/exports
+backend/data/exports/<workspace-id>/
 ```
+
+La lista, il limite e la cancellazione dei backup agiscono solo sul workspace
+della richiesta corrente.
+
+### Genera Picking
+
+Il comando genera prima l'Excel usando esclusivamente l'originale del workspace
+corrente, quindi inoltra quel buffer direttamente a PickCSV senza salvarlo in un
+file temporaneo condiviso. Il proxy usa inoltre un `X-PickCSV-Client-Id` distinto
+per workspace: due utenti che avviano il picking nello stesso momento restano
+identificabili come richieste e batch separati anche dal servizio di destinazione.
 
 Endpoint:
 
@@ -495,15 +509,15 @@ Route principali:
 
 ```text
 backend/data/templates.json
-backend/data/uploads/last_upload.xlsx
-backend/data/exports/
+backend/data/uploads/<workspace-id>/last_upload.xlsx
+backend/data/exports/<workspace-id>/
 ```
 
 Significato:
 
 - `templates.json`: catalogo locale dei nomi prodotto;
-- `last_upload.xlsx`: ultimo file Excel caricato, usato come base export;
-- `exports/`: backup dei file esportati.
+- `last_upload.xlsx`: ultimo file Excel caricato nel singolo workspace, usato come base export;
+- `exports/<workspace-id>/`: backup isolati dei file esportati nel singolo workspace.
 
 ## Protezioni e limiti
 

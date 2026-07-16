@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { requireWorkspace } = require('../lib/workspace');
 const router = express.Router();
 
 // Multer: store file in memory
@@ -20,18 +21,32 @@ const upload = multer({
   },
 });
 
-const UPLOAD_PATH = path.join(__dirname, '../data/uploads/last_upload.xlsx');
-const EXPORTS_DIR = path.join(__dirname, '../data/exports');
+const DATA_DIR = process.env.ORDEREDIT_DATA_DIR
+  ? path.resolve(process.env.ORDEREDIT_DATA_DIR)
+  : path.join(__dirname, '../data');
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+const EXPORTS_DIR = path.join(DATA_DIR, 'exports');
 const ExcelJS = require('exceljs'); // Needed for perfect style preservation
+
+function workspaceUploadPath(workspaceId) {
+  return path.join(UPLOADS_DIR, workspaceId, 'last_upload.xlsx');
+}
+
+function workspaceExportsDir(workspaceId) {
+  return path.join(EXPORTS_DIR, workspaceId);
+}
+
+router.use(requireWorkspace);
 
 /**
  * Load the last uploaded buffer from disk (survives server restarts).
  * @returns {Buffer|null}
  */
-function loadLastUpload() {
+function loadLastUpload(workspaceId) {
   try {
-    if (fs.existsSync(UPLOAD_PATH)) {
-      return fs.readFileSync(UPLOAD_PATH);
+    const uploadPath = workspaceUploadPath(workspaceId);
+    if (fs.existsSync(uploadPath)) {
+      return fs.readFileSync(uploadPath);
     }
   } catch (err) {
     console.error('Errore lettura file upload salvato:', err.message);
@@ -39,10 +54,12 @@ function loadLastUpload() {
   return null;
 }
 
-function ensureExportsDir() {
-  if (!fs.existsSync(EXPORTS_DIR)) {
-    fs.mkdirSync(EXPORTS_DIR, { recursive: true });
+function ensureExportsDir(workspaceId) {
+  const exportsDir = workspaceExportsDir(workspaceId);
+  if (!fs.existsSync(exportsDir)) {
+    fs.mkdirSync(exportsDir, { recursive: true });
   }
+  return exportsDir;
 }
 
 function sanitizeBackupFilename(filename) {
@@ -56,35 +73,36 @@ function backupTimestamp() {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
 }
 
-function backupExportBuffer(buffer, filename) {
-  ensureExportsDir();
+function backupExportBuffer(buffer, filename, workspaceId) {
+  const exportsDir = ensureExportsDir(workspaceId);
   const safeName = sanitizeBackupFilename(filename);
   const ext = path.extname(safeName) || '.xlsx';
   const base = path.basename(safeName, ext);
   const backupName = `${backupTimestamp()}_${base}${ext}`;
-  fs.writeFileSync(path.join(EXPORTS_DIR, backupName), Buffer.from(buffer));
+  fs.writeFileSync(path.join(exportsDir, backupName), Buffer.from(buffer));
   return backupName;
 }
 
-function pruneExportBackups(limit) {
+function pruneExportBackups(limit, workspaceId) {
   const max = Number.parseInt(limit, 10);
   if (!Number.isFinite(max) || max < 1) return 0;
-  const backups = listExportBackups();
+  const exportsDir = ensureExportsDir(workspaceId);
+  const backups = listExportBackups(workspaceId);
   const overflow = backups.slice(max);
   overflow.forEach((item) => {
     try {
-      fs.unlinkSync(path.join(EXPORTS_DIR, item.name));
+      fs.unlinkSync(path.join(exportsDir, item.name));
     } catch {}
   });
   return overflow.length;
 }
 
-function listExportBackups() {
-  ensureExportsDir();
-  return fs.readdirSync(EXPORTS_DIR)
+function listExportBackups(workspaceId) {
+  const exportsDir = ensureExportsDir(workspaceId);
+  return fs.readdirSync(exportsDir)
     .filter((name) => /\.xlsx$/i.test(name))
     .map((name) => {
-      const fullPath = path.join(EXPORTS_DIR, name);
+      const fullPath = path.join(exportsDir, name);
       const stat = fs.statSync(fullPath);
       return {
         name,
@@ -539,7 +557,9 @@ router.post('/upload', upload.single('file'), (req, res) => {
   }
   (async () => {
     // Persist original buffer to disk so it survives server restarts
-    fs.writeFileSync(UPLOAD_PATH, req.file.buffer);
+    const uploadPath = workspaceUploadPath(req.workspaceId);
+    fs.mkdirSync(path.dirname(uploadPath), { recursive: true });
+    fs.writeFileSync(uploadPath, req.file.buffer);
     const [sheets, eanOverrides] = await Promise.all([
       extractSheetsFromBuffer(req.file.buffer),
       extractEanOverridesFromBuffer(req.file.buffer),
@@ -578,7 +598,7 @@ router.post('/export', async (req, res) => {
     return res.status(400).json({ error: 'Troppe modifiche struttura nel payload (max 100)' });
   }
   try {
-    const lastUploadedBuffer = loadLastUpload();
+    const lastUploadedBuffer = loadLastUpload(req.workspaceId);
     if (!lastUploadedBuffer) {
       throw new Error("Nessun file originale trovato. Per favore ricarica il file.");
     }
@@ -646,8 +666,8 @@ router.post('/export', async (req, res) => {
     const outName = filename || 'export.xlsx';
     let backupName = '';
     if (backup?.enabled !== false) {
-      backupName = backupExportBuffer(buffer, outName);
-      pruneExportBackups(backup?.limit);
+      backupName = backupExportBuffer(buffer, outName, req.workspaceId);
+      pruneExportBackups(backup?.limit, req.workspaceId);
     }
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -663,7 +683,7 @@ router.post('/export', async (req, res) => {
 // GET /api/xlsx/backups
 router.get('/backups', (req, res) => {
   try {
-    const backups = listExportBackups();
+    const backups = listExportBackups(req.workspaceId);
     const totalBytes = backups.reduce((sum, item) => sum + item.size, 0);
     res.json({ backups, count: backups.length, totalBytes });
   } catch (err) {
@@ -674,10 +694,11 @@ router.get('/backups', (req, res) => {
 // DELETE /api/xlsx/backups
 router.delete('/backups', (req, res) => {
   try {
-    const backups = listExportBackups();
+    const exportsDir = ensureExportsDir(req.workspaceId);
+    const backups = listExportBackups(req.workspaceId);
     backups.forEach((item) => {
       try {
-        fs.unlinkSync(path.join(EXPORTS_DIR, item.name));
+        fs.unlinkSync(path.join(exportsDir, item.name));
       } catch {}
     });
     res.json({ deleted: backups.length });

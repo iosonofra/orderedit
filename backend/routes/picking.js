@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { requireWorkspace } = require('../lib/workspace');
 
 const router = express.Router();
 const CONFIG_PATH = path.join(__dirname, '../data/picking_config.json');
@@ -43,7 +44,7 @@ const upload = multer({
   },
 });
 
-router.post('/upload', upload.single('file'), async (req, res) => {
+router.post('/upload', requireWorkspace, upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'File Excel mancante' });
   }
@@ -64,9 +65,9 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       body: form,
       headers: {
         Authorization: `Bearer ${pickingToken}`,
-        'X-PickCSV-Computer-Name': 'OrderEdit',
-        'X-PickCSV-User-Name': 'OrderEdit',
-        'X-PickCSV-Client-Id': 'OrderEdit',
+        'X-PickCSV-Computer-Name': `OrderEdit-${req.workspaceId.slice(0, 12)}`,
+        'X-PickCSV-User-Name': `OrderEdit-${req.workspaceId.slice(0, 12)}`,
+        'X-PickCSV-Client-Id': `OrderEdit-${req.workspaceId}`,
       },
       signal: AbortSignal.timeout(60_000),
     });

@@ -1,10 +1,15 @@
 import { defineStore } from 'pinia'
+import { workspaceStorageKey } from '../api/workspace.js'
 
 const RECOVERY_KEY = 'orderedit:recovery:v1'
 const CHECKPOINT_LIMIT = 40
 const EXPORT_PREFS_KEY = 'orderedit:export-filename:v1'
 const EDITOR_PREFS_KEY = 'orderedit:editor-prefs:v1'
 const LAYOUTS_KEY = 'orderedit:file-layouts:v1'
+
+function recoveryKey() {
+  return workspaceStorageKey(RECOVERY_KEY)
+}
 
 function clone(data) {
   return JSON.parse(JSON.stringify(data))
@@ -511,7 +516,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     readRecovery() {
       if (!this.recoveryEnabled) return null
       try {
-        const raw = localStorage.getItem(RECOVERY_KEY)
+        const raw = localStorage.getItem(recoveryKey())
         if (!raw) return null
         const parsed = JSON.parse(raw)
         if (!parsed || !Array.isArray(parsed.sheets) || !parsed.filename) return null
@@ -527,7 +532,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       }
       try {
         if (!this.hasData || !this.filename) return
-        localStorage.setItem(RECOVERY_KEY, JSON.stringify({
+        localStorage.setItem(recoveryKey(), JSON.stringify({
           filename: this.filename,
           sheets: this.sheets,
           originalSheets: this.originalSheets,
@@ -548,7 +553,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
       }
       try {
         if (!this.filename || !Array.isArray(sheetsSnapshot) || sheetsSnapshot.length === 0) return
-        localStorage.setItem(RECOVERY_KEY, JSON.stringify({
+        localStorage.setItem(recoveryKey(), JSON.stringify({
           filename: this.filename,
           sheets: clone(sheetsSnapshot),
           originalSheets: this.originalSheets,
@@ -612,7 +617,7 @@ export const useSpreadsheetStore = defineStore('spreadsheet', {
     },
     clearRecovery() {
       try {
-        localStorage.removeItem(RECOVERY_KEY)
+        localStorage.removeItem(recoveryKey())
       } catch {}
     },
     resetCheckpoints(sheets) {
