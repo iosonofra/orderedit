@@ -18,7 +18,10 @@ if (!fs.existsSync(exportsDir)) {
 
 // Middleware
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
-app.use(cors({ origin: CORS_ORIGIN }));
+app.use(cors({
+  origin: CORS_ORIGIN,
+  exposedHeaders: ['Content-Disposition', 'X-OrderEdit-Filename', 'X-OrderEdit-Orders', 'X-OrderEdit-Rows'],
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -29,6 +32,7 @@ app.use('/api/couriers', require('./routes/couriers'));
 app.use('/api/notes', require('./routes/notes'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/picking', require('./routes/picking'));
+app.use('/api/prestashop', require('./routes/prestashop'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));

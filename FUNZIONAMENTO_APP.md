@@ -353,6 +353,32 @@ backend/data/exports/<workspace-id>/
 La lista, il limite e la cancellazione dei backup agiscono solo sul workspace
 della richiesta corrente.
 
+### Import ordini PrestaShop 1.7
+
+La voce **PrestaShop** apre un flusso separato dall'upload manuale. Il backend
+usa il Webservice esclusivamente in lettura e mantiene la chiave API fuori dal
+browser. Sono richiesti i permessi `GET` sulle risorse `orders`, `customers`,
+`carriers`, `order_states` e `order_details`.
+
+Flusso:
+
+1. configurazione URL negozio, chiave Webservice e ID lingua;
+2. ricerca per riferimento o ID, filtro stato e intervallo date, con anteprima prodotti e quantità;
+3. selezione persistente degli ordini, fino a 100 per importazione;
+4. una riga Excel per ogni prodotto dell'ordine;
+5. generazione del template grafico predefinito con Note vuote;
+6. caricamento del workbook generato nel normale editor OrderEdit.
+
+Il template viene ricreato senza dati cliente incorporati. Mantiene le otto
+colonne del modello, font, colori alternati, bordi, larghezze, altezze e valori
+EAN/ID in formato testo. Dopo l'apertura sono disponibili le stesse operazioni
+del flusso file, inclusa l'unione righe per ordine.
+
+La selezione degli ordini vive esclusivamente nella memoria della singola pagina
+e non viene salvata in uno stato globale del server. Generazione, successivo
+upload ed export usano l'header workspace: due utenti contemporanei possono
+selezionare ordini differenti senza condividere righe o workbook.
+
 ### Genera Picking
 
 Il comando genera prima l'Excel usando esclusivamente l'originale del workspace
@@ -487,6 +513,7 @@ Responsabilita:
 - abilita payload JSON grandi fino a 50 MB;
 - monta route `/api/xlsx`;
 - monta route `/api/templates`;
+- monta route `/api/prestashop`;
 - espone health check `/api/health`.
 
 Route principali:
@@ -504,11 +531,17 @@ Route principali:
 | `/api/templates/:id` | DELETE | elimina template |
 | `/api/templates/import` | POST | importa CSV/JSON |
 | `/api/templates/export/:format` | GET | esporta CSV/JSON |
+| `/api/prestashop/config` | GET/PUT | legge o salva la connessione mascherando la chiave |
+| `/api/prestashop/test` | POST | verifica connessione e permessi ordini |
+| `/api/prestashop/states` | GET | elenca gli stati ordine |
+| `/api/prestashop/orders` | GET | ricerca e filtra gli ordini |
+| `/api/prestashop/workbook` | POST | genera il template XLSX dagli ordini selezionati |
 
 ## File e cartelle dati
 
 ```text
 backend/data/templates.json
+backend/data/prestashop_config.json
 backend/data/uploads/<workspace-id>/last_upload.xlsx
 backend/data/exports/<workspace-id>/
 ```
@@ -516,6 +549,7 @@ backend/data/exports/<workspace-id>/
 Significato:
 
 - `templates.json`: catalogo locale dei nomi prodotto;
+- `prestashop_config.json`: URL, chiave Webservice e lingua; escluso dai pacchetti release;
 - `last_upload.xlsx`: ultimo file Excel caricato nel singolo workspace, usato come base export;
 - `exports/<workspace-id>/`: backup isolati dei file esportati nel singolo workspace.
 

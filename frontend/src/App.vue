@@ -47,6 +47,14 @@
           </svg>
           <span class="nav-text">Catalogo</span>
         </RouterLink>
+        <RouterLink to="/prestashop" class="nav-link" active-class="nav-link--active">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7h18l-2 13H5L3 7Z"></path>
+            <path d="M8 7a4 4 0 0 1 8 0"></path>
+            <path d="M9 11v1M15 11v1"></path>
+          </svg>
+          <span class="nav-text">PrestaShop</span>
+        </RouterLink>
         <RouterLink to="/settings" class="nav-link" active-class="nav-link--active">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" y1="21" x2="4" y2="14"></line>

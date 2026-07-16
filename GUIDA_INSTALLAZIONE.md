@@ -29,3 +29,9 @@ Per installare l'applicazione per la prima volta:
 1. Aprire OrderEdit e andare in **Impostazioni > Integrazione Picking**.
 2. Inserire il token API PickCSV e premere **Salva token**.
 3. Il pulsante **Genera Picking** invierà il file come **Upload automatico** con canale **OrderEdit**.
+
+## 4. Configurazione PrestaShop 1.7
+1. Nel Back Office PrestaShop abilitare il Webservice e creare una chiave con permessi GET su orders, customers, carriers, order_states e order_details.
+2. Aprire la voce **PrestaShop** in OrderEdit e selezionare **Configura Webservice**.
+3. Inserire URL del negozio, chiave e ID lingua, quindi salvare ed eseguire il test connessione.
+4. La configurazione viene salvata solo in ackend/data/prestashop_config.json, che non e incluso negli aggiornamenti ZIP.
